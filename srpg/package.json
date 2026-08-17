@@ -1,0 +1,11 @@
+{
+  "name": "threecountry-srpg-v2",
+  "version": "0.2.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "check": "node -e \"Promise.all(['./content.js','./engine.js','./audio.js'].map((p)=>import(p))).then(()=>console.log('module check ok'))\" && node --check app.js",
+    "test": "node --test tests/*.test.mjs",
+    "build": "npm run check && npm test && node scripts/build.mjs"
+  }
+}
