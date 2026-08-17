@@ -17,7 +17,7 @@ jobs:
   unpack:
     if: github.actor != 'github-actions[bot]'
     runs-on: ubuntu-latest
-    timeout-minutes: 8
+    timeout-minutes: 12
     steps:
       - uses: actions/checkout@v4
         with:
@@ -28,18 +28,20 @@ jobs:
         run: |
           count=$(find .bootstrap -maxdepth 1 -name 'app.tar.xz.b64.part*' 2>/dev/null | wc -l)
           echo "count=$count" >> "$GITHUB_OUTPUT"
-          if [ "$count" -ne 7 ]; then
-            echo "Waiting for all 7 payload parts (found $count)."
+          if [ "$count" -ne 16 ]; then
+            echo "Waiting for all 16 payload parts (found $count)."
           fi
-      - name: Unpack application
-        if: steps.payload.outputs.count == '7'
+      - name: Unpack and verify application
+        if: steps.payload.outputs.count == '16'
         shell: bash
         run: |
           cat .bootstrap/app.tar.xz.b64.part* | base64 --decode > /tmp/threecountry-app.tar.xz
           tar -xJf /tmp/threecountry-app.tar.xz
           rm -rf .bootstrap
+          npm install
+          npm test
       - name: Commit generated application
-        if: steps.payload.outputs.count == '7'
+        if: steps.payload.outputs.count == '16'
         shell: bash
         run: |
           git config user.name "github-actions[bot]"
