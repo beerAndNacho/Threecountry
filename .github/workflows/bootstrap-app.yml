@@ -46,7 +46,7 @@ jobs:
           node-version: 22
           cache: npm
 
-      - name: Reassemble source payload
+      - name: Reassemble source payload without changing workflows
         shell: bash
         run: |
           set -euo pipefail
@@ -54,8 +54,7 @@ jobs:
           test "$count" -eq 3
           cat .srpg-bootstrap/payload.b64.part* | base64 --decode > /tmp/threecountry-srpg.tar.xz
           tar -xJf /tmp/threecountry-srpg.tar.xz
-          rm -rf .srpg-bootstrap
-          rm -f .github/workflows/srpg-bootstrap.yml
+          rm -f .github/workflows/srpg-ci.yml
 
       - name: Install, test, and build SRPG
         shell: bash
