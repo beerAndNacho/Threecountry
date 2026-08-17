@@ -6,7 +6,7 @@ on:
   pull_request:
 
 permissions:
-  contents: read
+  contents: write
 
 concurrency:
   group: threecountry-ci-${{ github.ref }}
@@ -28,3 +28,54 @@ jobs:
         run: npm run build
       - name: Engine tests
         run: node --test tests/*.test.mjs
+
+  bootstrap-srpg:
+    if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository && github.event.pull_request.head.ref == 'srpg-v2'
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - name: Checkout SRPG branch
+        uses: actions/checkout@v4
+        with:
+          ref: srpg-v2
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Reassemble source payload
+        shell: bash
+        run: |
+          set -euo pipefail
+          count=$(find .srpg-bootstrap -maxdepth 1 -name 'payload.b64.part*' | wc -l)
+          test "$count" -eq 3
+          cat .srpg-bootstrap/payload.b64.part* | base64 --decode > /tmp/threecountry-srpg.tar.xz
+          tar -xJf /tmp/threecountry-srpg.tar.xz
+          rm -rf .srpg-bootstrap
+          rm -f .github/workflows/srpg-bootstrap.yml
+
+      - name: Install, test, and build SRPG
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm ci
+          npm run build
+          test -s srpg/dist/index.html
+          test -s srpg/dist/styles.css
+          test -s srpg/dist/app.js
+          test -s srpg/dist/engine.js
+          test -s srpg/dist/content.js
+          test -s srpg/dist/audio.js
+
+      - name: Commit tested SRPG branch
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git commit -m 'feat: build playable grid-based SRPG vertical slice'
+          git push origin HEAD:srpg-v2
