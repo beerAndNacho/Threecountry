@@ -23,6 +23,23 @@
 - 저장: 브라우저 자동 저장, 복수 슬롯은 고도화 단계
 - 과금 원칙: MVP 무료, 가챠·행동력·전투 중 광고 없음
 
+## 캐릭터 설계 상태
+
+MVP 장수 48명 전원에 대해 다음 항목의 1차 설계를 완료했다.
+
+- 통솔·무력·지력·정치·매력
+- 보병·기병·궁병 적성
+- 전장 역할과 운영 역할
+- 고유 특성·전술
+- 반드시 체감되는 약점
+- 핵심 인연과 갈등
+- 시각 실루엣·색·소품
+- 말투·대표 대사
+- 개인 사건 씨앗
+- 진영 내 조합과 기회비용
+
+수직 슬라이스에서는 조조 측 6명과 유비 측 6명만 먼저 실제 데이터·표정·대사로 구현하고, 나머지는 코어 규칙 검증 후 단계적으로 넣는다.
+
 ## 문서 지도
 
 - [`docs/01-PRODUCT-VISION.md`](docs/01-PRODUCT-VISION.md) — 제품 목표, 타깃, 플레이 경험, UX 원칙, 수익화 경계
@@ -32,6 +49,17 @@
 - [`docs/05-ROADMAP-QA.md`](docs/05-ROADMAP-QA.md) — 수직 슬라이스부터 MVP까지의 순서, 테스트·밸런스·출시 기준
 - [`docs/06-SCREEN-FLOWS.md`](docs/06-SCREEN-FLOWS.md) — 시작·지도·조정·군단·전투·사건·엔딩의 모바일 화면 명세
 - [`docs/07-DECISION-LOG.md`](docs/07-DECISION-LOG.md) — 확정 결정, 보류 범위, 위험, 다음 개발 세션 시작 체크리스트
+- [`docs/08-CHARACTER-BIBLE.md`](docs/08-CHARACTER-BIBLE.md) — 48명 공통 설계 기준, 역할 인덱스, 진영별 상세 문서 링크
+
+### 진영별 상세 캐릭터 문서
+
+- [`docs/characters/01-LIU-BEI.md`](docs/characters/01-LIU-BEI.md) — 유비·관우·장비·조운·제갈량·방통·서서·미축
+- [`docs/characters/02-CAO-CAO.md`](docs/characters/02-CAO-CAO.md) — 조조·하후돈·하후연·전위·허저·순욱·곽가·사마의
+- [`docs/characters/03-SUN-JIAN.md`](docs/characters/03-SUN-JIAN.md) — 손견·손책·손권·주유·노숙·황개·정보·감녕
+- [`docs/characters/04-LU-BU.md`](docs/characters/04-LU-BU.md) — 여포·진궁·장료·고순·장패·초선·위속·송헌
+- [`docs/characters/05-YUAN-SHAO.md`](docs/characters/05-YUAN-SHAO.md) — 원소·안량·문추·전풍·저수
+- [`docs/characters/06-DONG-ZHUO.md`](docs/characters/06-DONG-ZHUO.md) — 동탁·이유·화웅·이각·곽사·가후
+- [`docs/characters/07-LIU-BIAO.md`](docs/characters/07-LIU-BIAO.md) — 유표·채모·괴량·황충·위연
 
 ## 구현 시작 게이트
 
@@ -44,6 +72,7 @@
 - 같은 시드와 같은 입력은 같은 결과를 만든다.
 - 저장 데이터 버전과 마이그레이션 정책이 있다.
 - 수직 슬라이스의 완료 기준이 테스트 가능한 문장으로 적혀 있다.
+- 수직 슬라이스 12명의 역할·약점·관계가 데이터로 변환 가능하다.
 
 ## 첫 구현 목표
 
