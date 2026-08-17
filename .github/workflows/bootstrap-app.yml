@@ -1,0 +1,49 @@
+name: bootstrap playable app
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.bootstrap/**'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: bootstrap-threecountry
+  cancel-in-progress: true
+
+jobs:
+  unpack:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Verify payload parts
+        id: payload
+        shell: bash
+        run: |
+          count=$(find .bootstrap -maxdepth 1 -name 'app.tar.xz.b64.part*' 2>/dev/null | wc -l)
+          echo "count=$count" >> "$GITHUB_OUTPUT"
+          if [ "$count" -ne 7 ]; then
+            echo "Waiting for all 7 payload parts (found $count)."
+          fi
+      - name: Unpack application
+        if: steps.payload.outputs.count == '7'
+        shell: bash
+        run: |
+          cat .bootstrap/app.tar.xz.b64.part* | base64 --decode > /tmp/threecountry-app.tar.xz
+          tar -xJf /tmp/threecountry-app.tar.xz
+          rm -rf .bootstrap
+      - name: Commit generated application
+        if: steps.payload.outputs.count == '7'
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "feat: build playable Threecountry vertical slice"
+          git push
