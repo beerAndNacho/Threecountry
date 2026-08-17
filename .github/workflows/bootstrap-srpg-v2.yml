@@ -1,14 +1,14 @@
 name: build SRPG v2 branch
 
 on:
-  push:
+  pull_request_target:
     branches: [main]
-    paths:
-      - '.github/workflows/bootstrap-srpg-v2.yml'
+    types: [opened, synchronize, reopened]
   workflow_dispatch:
 
 permissions:
   contents: write
+  pull-requests: read
 
 concurrency:
   group: threecountry-build-srpg-v2
@@ -16,6 +16,7 @@ concurrency:
 
 jobs:
   build-branch:
+    if: github.event_name == 'workflow_dispatch' || github.event.pull_request.head.ref == 'srpg-v2'
     runs-on: ubuntu-latest
     timeout-minutes: 12
     steps:
@@ -24,6 +25,7 @@ jobs:
         with:
           ref: srpg-v2
           fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - uses: actions/setup-node@v4
         with:
