@@ -30,7 +30,8 @@
 - [`docs/03-CONTENT-ART-BIBLE.md`](docs/03-CONTENT-ART-BIBLE.md) — 장수·사건 콘텐츠 기준, 문체, 독자적 미술·사운드 방향
 - [`docs/04-TECHNICAL-ARCHITECTURE.md`](docs/04-TECHNICAL-ARCHITECTURE.md) — 기술 스택, 순수 게임 엔진, 데이터·저장·AI 구조
 - [`docs/05-ROADMAP-QA.md`](docs/05-ROADMAP-QA.md) — 수직 슬라이스부터 MVP까지의 순서, 테스트·밸런스·출시 기준
-- [`docs/06-DECISION-LOG.md`](docs/06-DECISION-LOG.md) — 확정 결정, 보류 범위, 다음 개발 세션 시작 체크리스트
+- [`docs/06-SCREEN-FLOWS.md`](docs/06-SCREEN-FLOWS.md) — 시작·지도·조정·군단·전투·사건·엔딩의 모바일 화면 명세
+- [`docs/07-DECISION-LOG.md`](docs/07-DECISION-LOG.md) — 확정 결정, 보류 범위, 위험, 다음 개발 세션 시작 체크리스트
 
 ## 구현 시작 게이트
 
