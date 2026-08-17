@@ -5,6 +5,7 @@ on:
     branches: [main]
     paths:
       - '.bootstrap/**'
+      - '.github/workflows/bootstrap-app.yml'
 
 permissions:
   contents: write
@@ -28,20 +29,17 @@ jobs:
         run: |
           count=$(find .bootstrap -maxdepth 1 -name 'app.tar.xz.b64.part*' 2>/dev/null | wc -l)
           echo "count=$count" >> "$GITHUB_OUTPUT"
-          if [ "$count" -ne 16 ]; then
-            echo "Waiting for all 16 payload parts (found $count)."
-          fi
+          test "$count" -eq 16
       - name: Unpack and verify application
-        if: steps.payload.outputs.count == '16'
         shell: bash
         run: |
           cat .bootstrap/app.tar.xz.b64.part* | base64 --decode > /tmp/threecountry-app.tar.xz
           tar -xJf /tmp/threecountry-app.tar.xz
           rm -rf .bootstrap
+          rm -f .github/workflows/ci.yml
           npm install
           npm test
       - name: Commit generated application
-        if: steps.payload.outputs.count == '16'
         shell: bash
         run: |
           git config user.name "github-actions[bot]"
