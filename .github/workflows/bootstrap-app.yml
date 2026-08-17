@@ -1,49 +1,30 @@
-name: bootstrap playable app
+name: ci
 
 on:
   push:
     branches: [main]
-    paths:
-      - '.bootstrap/**'
-      - '.github/workflows/bootstrap-app.yml'
+  pull_request:
 
 permissions:
-  contents: write
+  contents: read
 
 concurrency:
-  group: bootstrap-threecountry
+  group: threecountry-ci-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
-  unpack:
-    if: github.actor != 'github-actions[bot]'
+  test:
     runs-on: ubuntu-latest
-    timeout-minutes: 12
+    timeout-minutes: 8
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
         with:
-          fetch-depth: 0
-      - name: Verify payload parts
-        id: payload
-        shell: bash
-        run: |
-          count=$(find .bootstrap -maxdepth 1 -name 'app.tar.xz.b64.part*' 2>/dev/null | wc -l)
-          echo "count=$count" >> "$GITHUB_OUTPUT"
-          test "$count" -eq 16
-      - name: Unpack and verify application
-        shell: bash
-        run: |
-          cat .bootstrap/app.tar.xz.b64.part* | base64 --decode > /tmp/threecountry-app.tar.xz
-          tar -xJf /tmp/threecountry-app.tar.xz
-          rm -rf .bootstrap
-          rm -f .github/workflows/ci.yml
-          npm install
-          npm test
-      - name: Commit generated application
-        shell: bash
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -A
-          git commit -m "feat: build playable Threecountry vertical slice"
-          git push
+          node-version: 22
+          cache: npm
+      - name: Install
+        run: npm ci
+      - name: Type check and build
+        run: npm run build
+      - name: Engine tests
+        run: node --test tests/*.test.mjs
