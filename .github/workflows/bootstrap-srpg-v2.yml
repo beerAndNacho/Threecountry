@@ -1,0 +1,65 @@
+name: build SRPG v2 branch
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/bootstrap-srpg-v2.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: threecountry-build-srpg-v2
+  cancel-in-progress: true
+
+jobs:
+  build-branch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - name: Checkout SRPG branch
+        uses: actions/checkout@v4
+        with:
+          ref: srpg-v2
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Reassemble source payload
+        shell: bash
+        run: |
+          set -euo pipefail
+          count=$(find .srpg-bootstrap -maxdepth 1 -name 'payload.b64.part*' | wc -l)
+          test "$count" -eq 3
+          cat .srpg-bootstrap/payload.b64.part* | base64 --decode > /tmp/threecountry-srpg.tar.xz
+          tar -xJf /tmp/threecountry-srpg.tar.xz
+          rm -rf .srpg-bootstrap
+          rm -f .github/workflows/srpg-bootstrap.yml
+
+      - name: Verify grid SRPG
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm ci
+          npm run build
+          test -s srpg/dist/index.html
+          test -s srpg/dist/styles.css
+          test -s srpg/dist/app.js
+          test -s srpg/dist/engine.js
+          test -s srpg/dist/content.js
+          test -s srpg/dist/audio.js
+
+      - name: Commit tested branch
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git commit -m 'feat: build playable grid-based SRPG vertical slice'
+          git push origin HEAD:srpg-v2
