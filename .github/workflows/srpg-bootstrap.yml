@@ -6,6 +6,7 @@ on:
     paths:
       - '.srpg-bootstrap/**'
       - '.github/workflows/srpg-bootstrap.yml'
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -16,7 +17,6 @@ concurrency:
 
 jobs:
   unpack:
-    if: github.actor != 'github-actions[bot]'
     runs-on: ubuntu-latest
     timeout-minutes: 12
     steps:
