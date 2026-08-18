@@ -5,10 +5,11 @@ const dist = new URL('../dist/', import.meta.url);
 await rm(dist, { recursive: true, force: true });
 await mkdir(dist, { recursive: true });
 for (const file of [
-  'index.html', 'styles.css', 'gameplay-v4.css',
-  'content.js', 'engine.js', 'audio.js', 'app.js', 'gameplay-v4.js',
+  'index.html', 'styles.css', 'gameplay-v4.css', 'character-art-v1.css',
+  'content.js', 'engine.js', 'audio.js', 'app.js', 'gameplay-v4.js', 'character-art-v1.js',
 ]) {
   await cp(new URL(file, source), new URL(file, dist));
 }
+await cp(new URL('assets/', source), new URL('assets/', dist), { recursive: true });
 await writeFile(new URL('.nojekyll', dist), '');
-console.log('SRPG v0.4 static build created in dist');
+console.log('SRPG v0.5 static build with premium character art created in dist');
