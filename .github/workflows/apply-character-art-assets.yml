@@ -1,0 +1,105 @@
+name: apply generated character art assets
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/apply-character-art-assets.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: threecountry-character-art
+  cancel-in-progress: true
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Fetch generated sheets from verified Git blobs
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p assets/character-sheets
+          python3 - <<'PY'
+          import base64
+          import json
+          import os
+          import struct
+          import urllib.request
+          from pathlib import Path
+
+          repository = 'beerAndNacho/Threecountry'
+          assets = {
+              'cao': '3a2ffee5230655e58cb8d6ced51c24af4117036a',
+              'xiahou': 'b70c9c2fafa1fb89b201d3f89221da4f8878bda7',
+              'dian': 'd4ac54dd6a32ab595df0285fa40246ede186bf79',
+              'xun': 'e364944bd5317d1e2fa1dc133e7ee8cee3371c1c',
+              'guo': 'f5c8dd3fba96529cb9acbd941dad8836022872e7',
+          }
+          token = os.environ['GH_TOKEN']
+          output = Path('assets/character-sheets')
+          manifest = {}
+          for hero, sha in assets.items():
+              request = urllib.request.Request(
+                  f'https://api.github.com/repos/{repository}/git/blobs/{sha}',
+                  headers={
+                      'Authorization': f'Bearer {token}',
+                      'Accept': 'application/vnd.github+json',
+                      'X-GitHub-Api-Version': '2022-11-28',
+                  },
+              )
+              with urllib.request.urlopen(request) as response:
+                  payload = json.load(response)
+              data = base64.b64decode(payload['content'].replace('\n', ''))
+              if data[:8] != b'\x89PNG\r\n\x1a\n':
+                  raise SystemExit(f'{hero}: not a PNG')
+              width, height = struct.unpack('>II', data[16:24])
+              if (width, height) != (1122, 1402):
+                  raise SystemExit(f'{hero}: unexpected dimensions {width}x{height}')
+              path = output / f'{hero}.png'
+              path.write_bytes(data)
+              manifest[hero] = {'blob': sha, 'width': width, 'height': height, 'bytes': len(data)}
+          (output / 'manifest.json').write_text(json.dumps(manifest, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
+          print(json.dumps(manifest, ensure_ascii=False, indent=2))
+          PY
+
+      - name: Verify game, build static deployment
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm install --package-lock-only --ignore-scripts
+          npm run build
+          test -s dist/character-art-v1.js
+          test -s dist/character-art-v1.css
+          for hero in cao xiahou dian xun guo; do
+            test -s "dist/assets/character-sheets/${hero}.png"
+          done
+
+      - name: Commit verified assets and build
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add assets dist package-lock.json
+          if git diff --cached --quiet; then
+            echo 'Character assets already applied.'
+            exit 0
+          fi
+          git commit -m 'feat: apply premium character sheets to the game'
+          git push
