@@ -1,4 +1,4 @@
-# Payload complete: unpack the verified SRPG v2 source on this push.
+# Enhanced v0.3.1 payload. PR workflow on main applies and verifies this source.
 name: bootstrap SRPG v2 source
 
 on:
@@ -32,10 +32,10 @@ jobs:
         run: |
           count=$(find .bootstrap-srpg-v2 -maxdepth 1 -name 'source.tar.xz.b64.part*' 2>/dev/null | wc -l)
           echo "count=$count" >> "$GITHUB_OUTPUT"
-          echo "Found $count of 7 payload parts."
+          echo "Found $count of 9 payload parts."
 
       - name: Unpack, replace and verify SRPG v2
-        if: steps.payload.outputs.count == '7'
+        if: steps.payload.outputs.count == '9'
         shell: bash
         run: |
           set -euo pipefail
@@ -62,12 +62,12 @@ jobs:
           npm test
 
       - name: Commit verified SRPG v2
-        if: steps.payload.outputs.count == '7'
+        if: steps.payload.outputs.count == '9'
         shell: bash
         run: |
           set -euo pipefail
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add -A
-          git commit -m 'feat: implement playable grid-based SRPG v2'
+          git commit -m 'feat: enhance tactical options and character realism'
           git push origin HEAD:srpg-v2
