@@ -1,0 +1,63 @@
+/* Pixel SRPG geometry corrections after mobile visual inspection. */
+.pixel-character-art-v2 .unit-layer{
+  z-index:30!important;
+}
+
+.pixel-character-art-v2 .battle-unit[data-pixel-unit]{
+  isolation:isolate;
+  z-index:32!important;
+  transform:none!important;
+  translate:none!important;
+  scale:none!important;
+  rotate:none!important;
+  animation:none!important;
+  will-change:left,top;
+}
+
+.pixel-character-art-v2 .battle-unit[data-v4="compact"] .pixel-sprite-v2.unit{
+  display:block!important;
+  width:72%!important;
+  height:72%!important;
+  margin:11% auto 0!important;
+  scale:1!important;
+  translate:0 0!important;
+  rotate:0deg!important;
+  animation:none!important;
+  transform-origin:50% 78%!important;
+}
+
+.pixel-character-art-v2 .battle-unit.enemy .pixel-sprite-v2.unit{
+  transform:scaleX(-1)!important;
+}
+
+.pixel-character-art-v2 .battle-unit.selected .pixel-sprite-v2.unit{
+  transform:translateY(-2px) scale(1.08)!important;
+}
+
+.pixel-character-art-v2 .battle-unit.enemy.selected .pixel-sprite-v2.unit{
+  transform:translateY(-2px) scale(-1.08,1.08)!important;
+}
+
+.pixel-character-art-v2 .battle-grid{
+  min-height:0!important;
+}
+
+.pixel-character-art-v2 .pixel-sheet-modal{
+  background:rgba(3,6,5,.92);
+}
+
+.pixel-character-art-v2 .pixel-sheet-modal>section,
+.pixel-character-art-v2 .pixel-sheet-scroll{
+  background-color:#090d0b;
+}
+
+@media(max-width:760px){
+  .pixel-character-art-v2 .battlefield-scroll{
+    min-height:360px!important;
+    max-height:calc(100dvh - 215px)!important;
+  }
+
+  .pixel-character-art-v2 .battle-grid{
+    min-height:0!important;
+  }
+}
