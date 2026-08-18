@@ -29,25 +29,25 @@ jobs:
         id: payload
         shell: bash
         run: |
-          count=$(find .bootstrap-srpg-v2 -maxdepth 1 -name 'source.zip.b64.part*' 2>/dev/null | wc -l)
+          count=$(find .bootstrap-srpg-v2 -maxdepth 1 -name 'source.tar.xz.b64.part*' 2>/dev/null | wc -l)
           echo "count=$count" >> "$GITHUB_OUTPUT"
-          echo "Found $count of 15 payload parts."
+          echo "Found $count of 7 payload parts."
 
       - name: Unpack, replace and verify SRPG v2
-        if: steps.payload.outputs.count == '15'
+        if: steps.payload.outputs.count == '7'
         shell: bash
         run: |
           set -euo pipefail
-          cat .bootstrap-srpg-v2/source.zip.b64.part* | base64 --decode > /tmp/threecountry-srpg-v2-source.zip
+          cat .bootstrap-srpg-v2/source.tar.xz.b64.part* | base64 --decode > /tmp/threecountry-srpg-v2-source.tar.xz
           rm -rf /tmp/threecountry-srpg-v2-unpack
           mkdir -p /tmp/threecountry-srpg-v2-unpack
-          unzip -q /tmp/threecountry-srpg-v2-source.zip -d /tmp/threecountry-srpg-v2-unpack
-          source_dir='/tmp/threecountry-srpg-v2-unpack/threecountry-srpg-v2'
+          tar -xJf /tmp/threecountry-srpg-v2-source.tar.xz -C /tmp/threecountry-srpg-v2-unpack
+          source_dir='/tmp/threecountry-srpg-v2-unpack'
           test -d "$source_dir/src"
 
           rm -rf src dist tests scripts
           rm -f index.html package.json package-lock.json .gitignore
-          cp -R "$source_dir/src" "$source_dir/dist" "$source_dir/tests" "$source_dir/scripts" .
+          cp -R "$source_dir/src" "$source_dir/tests" "$source_dir/scripts" .
           cp "$source_dir/index.html" "$source_dir/package.json" "$source_dir/package-lock.json" "$source_dir/.gitignore" .
           cp "$source_dir/README.md" README.md
           mkdir -p docs .github/workflows
@@ -61,7 +61,7 @@ jobs:
           npm test
 
       - name: Commit verified SRPG v2
-        if: steps.payload.outputs.count == '15'
+        if: steps.payload.outputs.count == '7'
         shell: bash
         run: |
           set -euo pipefail
