@@ -1,7 +1,7 @@
 name: apply SRPG v2 payload
 
 on:
-  pull_request:
+  pull_request_target:
     branches: [main]
     types: [opened, synchronize, reopened, ready_for_review]
 
@@ -14,7 +14,7 @@ concurrency:
 
 jobs:
   apply:
-    if: github.head_ref == 'srpg-v2' && github.event.pull_request.head.repo.full_name == github.repository
+    if: github.event.pull_request.head.ref == 'srpg-v2' && github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
     timeout-minutes: 12
     steps:
