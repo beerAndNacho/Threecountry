@@ -1,0 +1,1 @@
+This branch stages generated character sheets for integration.
