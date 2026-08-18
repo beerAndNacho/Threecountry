@@ -31,10 +31,10 @@ jobs:
         run: |
           count=$(find .bootstrap-srpg-v2 -maxdepth 1 -name 'source.zip.b64.part*' 2>/dev/null | wc -l)
           echo "count=$count" >> "$GITHUB_OUTPUT"
-          echo "Found $count of 3 payload parts."
+          echo "Found $count of 15 payload parts."
 
       - name: Unpack, replace and verify SRPG v2
-        if: steps.payload.outputs.count == '3'
+        if: steps.payload.outputs.count == '15'
         shell: bash
         run: |
           set -euo pipefail
@@ -61,7 +61,7 @@ jobs:
           npm test
 
       - name: Commit verified SRPG v2
-        if: steps.payload.outputs.count == '3'
+        if: steps.payload.outputs.count == '15'
         shell: bash
         run: |
           set -euo pipefail
