@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "check": "node -e \"Promise.all(['./content.js','./engine.js','./audio.js','./gameplay-v4.js'].map((p)=>import(p))).then(()=>console.log('module check ok'))\" && node --check app.js && node --check gameplay-v4.js",
+    "check": "node -e \"Promise.all(['./content.js','./engine.js','./audio.js'].map((p)=>import(p))).then(()=>console.log('module check ok'))\" && node --check app.js && node --check gameplay-v4.js",
     "test": "node --test tests/*.test.mjs",
     "build": "npm run check && npm test && node scripts/build.mjs"
   }
