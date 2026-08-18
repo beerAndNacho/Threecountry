@@ -1,0 +1,1 @@
+Pixel v2 verification scope: 12 characters, story portraits, roster portraits, preview sprites, battle sprites, idle/move/attack/skill states, mobile rendering.
