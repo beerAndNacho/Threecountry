@@ -30,16 +30,16 @@ jobs:
         id: payload
         shell: bash
         run: |
-          count=$(find .bootstrap-srpg-v2 -maxdepth 1 -name 'source.tar.xz.b64.part*' 2>/dev/null | wc -l)
+          count=$(find .bootstrap-srpg-v2 -maxdepth 1 -name 'enhanced.tar.xz.b64.part*' 2>/dev/null | wc -l)
           echo "count=$count" >> "$GITHUB_OUTPUT"
-          echo "Found $count of 9 payload parts."
+          echo "Found $count of 4 enhanced payload parts."
 
       - name: Unpack, replace and verify SRPG v2
-        if: steps.payload.outputs.count == '9'
+        if: steps.payload.outputs.count == '4'
         shell: bash
         run: |
           set -euo pipefail
-          cat .bootstrap-srpg-v2/source.tar.xz.b64.part* | base64 --decode > /tmp/threecountry-srpg-v2-source.tar.xz
+          cat .bootstrap-srpg-v2/enhanced.tar.xz.b64.part* | base64 --decode > /tmp/threecountry-srpg-v2-source.tar.xz
           rm -rf /tmp/threecountry-srpg-v2-unpack
           mkdir -p /tmp/threecountry-srpg-v2-unpack
           tar -xJf /tmp/threecountry-srpg-v2-source.tar.xz -C /tmp/threecountry-srpg-v2-unpack
@@ -62,7 +62,7 @@ jobs:
           npm test
 
       - name: Commit verified SRPG v2
-        if: steps.payload.outputs.count == '9'
+        if: steps.payload.outputs.count == '4'
         shell: bash
         run: |
           set -euo pipefail
