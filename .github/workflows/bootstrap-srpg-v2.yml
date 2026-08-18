@@ -1,3 +1,4 @@
+# Payload complete: unpack the verified SRPG v2 source on this push.
 name: bootstrap SRPG v2 source
 
 on:
