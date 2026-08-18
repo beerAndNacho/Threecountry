@@ -1,181 +1,133 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  attackCity,
-  cityActionPreviews,
-  createNewGame,
-  defaultBattleDraft,
-  endTurn,
-  invariantErrors,
-  pendingEvent,
-  performCityAction,
-  recruitChance,
-  resolveEventChoice,
-} from '../dist/assets/engine.js';
+  basicAttack, createBattle, executeEnemyAction, getBasicAttackTargets,
+  getLivingUnits, getReachableCells, getSkillTargets, getUnit, moveUnit,
+  planEnemyAction, useSkill,
+} from '../engine.js';
 
-test('새 캠페인은 3도시·행동점 3·양 세력으로 시작한다', () => {
-  const state = createNewGame('cao', 'fixed-seed');
-  assert.equal(state.actionPoints, 3);
-  assert.equal(Object.keys(state.cities).length, 3);
-  assert.equal(state.cities.xuchang.ownerId, 'cao');
-  assert.equal(state.cities.luoyang.ownerId, 'liu');
-  assert.equal(state.cities.chenliu.ownerId, 'neutral');
-  assert.deepEqual(invariantErrors(state), []);
+function unitByHero(state, heroId) {
+  return state.units.find((unit) => unit.heroId === heroId && !unit.dead);
+}
+
+function put(state, heroId, x, y) {
+  const unit = unitByHero(state, heroId);
+  unit.x = x;
+  unit.y = y;
+  return unit;
+}
+
+test('creates four player officers and six enemy units', () => {
+  const state = createBattle();
+  assert.equal(getLivingUnits(state, 'player').length, 4);
+  assert.equal(getLivingUnits(state, 'enemy').length, 6);
+  assert.equal(unitByHero(state, 'cao').leader, false);
+  assert.equal(unitByHero(state, 'liu').leader, true);
 });
 
-test('개간은 행동점과 금을 사용하고 농업을 높인다', () => {
-  const state = createNewGame('cao', 'farm-seed');
-  const beforeGold = state.factions.cao.gold;
-  const beforeAgriculture = state.cities.xuchang.agriculture;
-  const result = performCityAction(state, 'xuchang', 'farm');
+test('movement cannot enter river or occupied cells', () => {
+  const state = createBattle();
+  const cao = unitByHero(state, 'cao');
+  cao.x = 4;
+  cao.y = 1;
+  const cells = getReachableCells(state, cao.id);
+  assert.equal(cells.some((cell) => cell.x === 5 && cell.y === 1), false, 'river must be blocked');
+  const occupied = unitByHero(state, 'xiahou');
+  occupied.x = 4;
+  occupied.y = 2;
+  const next = getReachableCells(state, cao.id);
+  assert.equal(next.some((cell) => cell.x === 4 && cell.y === 2), false, 'occupied tile must be blocked');
+});
+
+test('player can move and then attack within range', () => {
+  let state = createBattle();
+  const cao = put(state, 'cao', 3, 2);
+  const soldier = put(state, 'soldier-spear', 5, 2);
+  const moved = moveUnit(state, cao.id, 4, 2);
+  assert.equal(moved.ok, true);
+  state = moved.state;
+  const targets = getBasicAttackTargets(state, cao.id);
+  assert.ok(targets.some((target) => target.id === soldier.id));
+  const attacked = basicAttack(state, cao.id, soldier.id, { noCounter: true });
+  assert.equal(attacked.ok, true);
+  assert.ok(getUnit(attacked.state, soldier.id).hp < soldier.maxHp);
+  assert.equal(getUnit(attacked.state, cao.id).acted, true);
+});
+
+test('same seed and same attack produce the same damage', () => {
+  const first = createBattle({ seed: 7733 });
+  const second = createBattle({ seed: 7733 });
+  const a1 = put(first, 'cao', 3, 2);
+  const d1 = put(first, 'soldier-spear', 4, 2);
+  const a2 = put(second, 'cao', 3, 2);
+  const d2 = put(second, 'soldier-spear', 4, 2);
+  const r1 = basicAttack(first, a1.id, d1.id, { force: true, noCounter: true });
+  const r2 = basicAttack(second, a2.id, d2.id, { force: true, noCounter: true });
+  assert.equal(r1.event.damage, r2.event.damage);
+  assert.equal(r1.event.critical, r2.event.critical);
+});
+
+test('Guo Jia skill deals damage and roots the target', () => {
+  const state = createBattle({ party: ['cao', 'xiahou', 'dian', 'guo'] });
+  const guo = put(state, 'guo', 4, 2);
+  const target = put(state, 'liu', 7, 2);
+  assert.ok(getSkillTargets(state, guo.id).some((unit) => unit.id === target.id));
+  const result = useSkill(state, guo.id, target.id);
   assert.equal(result.ok, true);
-  assert.equal(result.state.actionPoints, 2);
-  assert.equal(result.state.factions.cao.gold, beforeGold - 100);
-  assert.ok(result.state.cities.xuchang.agriculture > beforeAgriculture);
-  assert.deepEqual(invariantErrors(result.state), []);
+  assert.ok(getUnit(result.state, target.id).hp < target.maxHp);
+  assert.equal(getUnit(result.state, target.id).status.root, 2);
 });
 
-test('행동점이 없으면 도시 행동을 거부한다', () => {
-  const state = createNewGame('liu', 'ap-seed');
-  state.actionPoints = 0;
-  const previews = cityActionPreviews(state, 'luoyang');
-  assert.equal(previews.every((preview) => preview.enabled === false), true);
-  const result = performCityAction(state, 'luoyang', 'patrol');
-  assert.equal(result.ok, false);
-  assert.match(result.message, /행동점/);
-});
-
-test('인재 탐색은 숨은 장수를 접촉 상태로 만든다', () => {
-  const state = createNewGame('cao', 'search-seed');
-  const result = performCityAction(state, 'xuchang', 'search');
+test('Xiahou Dun skill grants shield and taunt', () => {
+  const state = createBattle();
+  const xiahou = unitByHero(state, 'xiahou');
+  const result = useSkill(state, xiahou.id, xiahou.id);
   assert.equal(result.ok, true);
-  const candidates = Object.values(result.state.officers).filter((officer) => officer.status === 'candidate');
-  assert.equal(candidates.length, 1);
-  assert.equal(candidates[0].id, 'xun_yu');
-  assert.ok(recruitChance(result.state, candidates[0].id) >= 35);
+  assert.equal(getUnit(result.state, xiahou.id).status.shield, 24);
+  assert.equal(getUnit(result.state, xiahou.id).status.taunt, 2);
 });
 
-test('동일 시드와 동일 편성의 전투 결과는 재현된다', () => {
-  const first = createNewGame('cao', 'battle-fixed');
-  const second = createNewGame('cao', 'battle-fixed');
-  const firstDraft = defaultBattleDraft(first, 'xuchang', 'chenliu');
-  const secondDraft = defaultBattleDraft(second, 'xuchang', 'chenliu');
-  assert.ok(firstDraft);
-  assert.ok(secondDraft);
-  const firstResult = attackCity(first, firstDraft);
-  const secondResult = attackCity(second, secondDraft);
-  assert.equal(firstResult.ok, true);
-  assert.equal(secondResult.ok, true);
-  assert.deepEqual(firstResult.state.lastBattle, secondResult.state.lastBattle);
-  assert.deepEqual(invariantErrors(firstResult.state), []);
-});
-
-test('계절 종료 후 AI·수입·다음 사건이 해결된다', () => {
-  const state = createNewGame('liu', 'turn-seed');
-  const result = endTurn(state);
+test('enemy AI attacks immediately when a player is in range', () => {
+  const state = createBattle();
+  state.phase = 'enemy';
+  const guan = put(state, 'guan', 4, 2);
+  const cao = put(state, 'cao', 5, 2);
+  const plan = planEnemyAction(state, guan.id);
+  assert.ok(['attack', 'skill'].includes(plan.type));
+  assert.equal(plan.targetId, cao.id);
+  const result = executeEnemyAction(state, plan);
   assert.equal(result.ok, true);
-  assert.equal(result.state.turn, 2);
-  assert.equal(result.state.actionPoints, 3);
-  assert.ok(result.state.pendingEventId);
-  assert.ok(pendingEvent(result.state));
-  assert.deepEqual(invariantErrors(result.state), []);
+  assert.ok(getUnit(result.state, cao.id).hp < cao.maxHp);
 });
 
-test('사건 선택은 효과를 적용하고 사건 잠금을 해제한다', () => {
-  const state = createNewGame('cao', 'event-seed');
-  const ended = endTurn(state);
-  assert.equal(ended.ok, true);
-  const event = pendingEvent(ended.state);
-  assert.ok(event);
-  const result = resolveEventChoice(ended.state, event.choices[0].id);
+test('defeating Liu Bei ends battle with victory', () => {
+  const state = createBattle();
+  const dian = put(state, 'dian', 10, 3);
+  const liu = put(state, 'liu', 11, 3);
+  liu.hp = 1;
+  const result = basicAttack(state, dian.id, liu.id, { force: true, noCounter: true });
   assert.equal(result.ok, true);
-  assert.equal(result.state.pendingEventId, null);
-  assert.deepEqual(invariantErrors(result.state), []);
+  assert.equal(result.state.result.outcome, 'victory');
+  assert.equal(result.state.result.reason, 'leader-defeated');
 });
 
-test('추천 출전 병력은 최소 수비대 800명을 남긴다', () => {
-  const state = createNewGame('liu', 'draft-seed');
-  const draft = defaultBattleDraft(state, 'luoyang', 'chenliu');
-  assert.ok(draft);
-  assert.ok(state.cities.luoyang.troops - draft.committedTroops >= 800);
-  assert.ok(draft.committedTroops >= 2400);
+test('occupying the command camp wins even if Liu Bei survives', () => {
+  const state = createBattle();
+  const cao = put(state, 'cao', 10, 3);
+  put(state, 'liu', 10, 2);
+  const moved = moveUnit(state, cao.id, 11, 3);
+  assert.equal(moved.ok, true);
+  assert.equal(moved.state.result.outcome, 'victory');
+  assert.equal(moved.state.result.reason, 'command-captured');
 });
 
-test('첫 중립도시 전투는 양 군주 모두 추천 편성으로 진행 가능하다', () => {
-  for (const faction of ['cao', 'liu']) {
-    const state = createNewGame(faction, `opening-${faction}`);
-    const source = faction === 'cao' ? 'xuchang' : 'luoyang';
-    const draft = defaultBattleDraft(state, source, 'chenliu');
-    assert.ok(draft);
-    const result = attackCity(state, draft);
-    assert.equal(result.ok, true);
-    assert.equal(result.state.lastBattle.attackerWon, true);
-    assert.equal(result.state.cities.chenliu.ownerId, faction);
-  }
-});
-
-test('AI는 플레이어의 첫 계절에 즉시 반격하지 않는다', () => {
-  let state = createNewGame('cao', 'grace-turn');
-  const draft = defaultBattleDraft(state, 'xuchang', 'chenliu');
-  state = attackCity(state, draft).state;
-  const ended = endTurn(state);
-  assert.equal(ended.ok, true);
-  assert.equal(ended.state.cities.chenliu.ownerId, 'cao');
-  assert.equal(ended.state.lastBattle, null);
-});
-
-test('3도시 수직 슬라이스는 내정과 두 번의 공격으로 승리까지 진행된다', () => {
-  let state = createNewGame('cao', 'path-seed');
-  let draft = defaultBattleDraft(state, 'xuchang', 'chenliu');
-  state = attackCity(state, draft).state;
-  state = endTurn(state).state;
-  let event = pendingEvent(state);
-  if (event) state = resolveEventChoice(state, event.choices.at(-1).id).state;
-  for (const action of ['recruit', 'recruit', 'patrol']) {
-    const result = performCityAction(state, 'chenliu', action);
-    assert.equal(result.ok, true);
-    state = result.state;
-  }
-  state = endTurn(state).state;
-  event = pendingEvent(state);
-  if (event) state = resolveEventChoice(state, event.choices.at(-1).id).state;
-  for (const action of ['recruit', 'recruit']) {
-    const result = performCityAction(state, 'chenliu', action);
-    assert.equal(result.ok, true);
-    state = result.state;
-  }
-  draft = defaultBattleDraft(state, 'chenliu', 'luoyang');
-  const final = attackCity(state, draft);
-  assert.equal(final.ok, true);
-  assert.equal(final.state.status, 'victory');
-  assert.equal(final.state.cities.luoyang.ownerId, 'cao');
-  assert.deepEqual(invariantErrors(final.state), []);
-});
-
-test('유비 연대기도 진류를 거쳐 허창 점령 승리까지 진행된다', () => {
-  let state = createNewGame('liu', 'liu-path-seed');
-  let draft = defaultBattleDraft(state, 'luoyang', 'chenliu');
-  state = attackCity(state, draft).state;
-  state = endTurn(state).state;
-  let event = pendingEvent(state);
-  if (event) state = resolveEventChoice(state, event.choices.at(-1).id).state;
-  for (const action of ['recruit', 'recruit', 'patrol']) {
-    const result = performCityAction(state, 'chenliu', action);
-    assert.equal(result.ok, true);
-    state = result.state;
-  }
-  state = endTurn(state).state;
-  event = pendingEvent(state);
-  if (event) state = resolveEventChoice(state, event.choices.at(-1).id).state;
-  for (const action of ['recruit', 'recruit']) {
-    const result = performCityAction(state, 'chenliu', action);
-    assert.equal(result.ok, true);
-    state = result.state;
-  }
-  draft = defaultBattleDraft(state, 'chenliu', 'xuchang');
-  const final = attackCity(state, draft);
-  assert.equal(final.ok, true);
-  assert.equal(final.state.status, 'victory');
-  assert.equal(final.state.cities.xuchang.ownerId, 'liu');
-  assert.deepEqual(invariantErrors(final.state), []);
+test('strategy and facilities change opening stats', () => {
+  const steady = createBattle({ strategy: 'steady', facilities: { barracks: 3, market: 1, granary: 2, academy: 1 } });
+  const assault = createBattle({ strategy: 'assault', facilities: { barracks: 1, market: 1, granary: 1, academy: 1 } });
+  const steadyCao = unitByHero(steady, 'cao');
+  const assaultCao = unitByHero(assault, 'cao');
+  assert.ok(steadyCao.maxHp > assaultCao.maxHp);
+  assert.ok(steadyCao.defense > assaultCao.defense);
+  assert.equal(steadyCao.status.shield, 10);
+  assert.ok(steadyCao.skill >= assaultCao.skill);
 });

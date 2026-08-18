@@ -1,15 +1,11 @@
 {
-  "name": "threecountry-chronicle",
-  "version": "0.1.0",
+  "name": "threecountry-srpg-v2",
+  "version": "0.2.0",
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "rm -rf dist && tsc && node scripts/build.mjs",
-    "check": "tsc --noEmit",
-    "test": "npm run build && node --test tests/*.test.mjs",
-    "preview": "python3 -m http.server 4173 -d dist"
-  },
-  "devDependencies": {
-    "typescript": "^5.8.3"
+    "check": "node -e \"Promise.all(['./content.js','./engine.js','./audio.js'].map((p)=>import(p))).then(()=>console.log('module check ok'))\" && node --check app.js",
+    "test": "node --test tests/*.test.mjs",
+    "build": "npm run check && npm test && node scripts/build.mjs"
   }
 }
