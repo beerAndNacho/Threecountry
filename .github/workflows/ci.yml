@@ -1,0 +1,36 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: threecountry-srpg-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install
+        run: npm ci
+      - name: Build and test
+        run: npm run build
+      - name: Verify deployable files
+        run: |
+          test -s dist/index.html
+          test -s dist/styles.css
+          test -s dist/gameplay-v4.css
+          test -s dist/app.js
+          test -s dist/gameplay-v4.js
+          grep -q 'gameplay-v4.js' dist/index.html
