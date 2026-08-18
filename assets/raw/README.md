@@ -1,0 +1,1 @@
+Generated character sheets staged for cropping and integration.
