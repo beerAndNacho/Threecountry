@@ -8,38 +8,40 @@ const EXPECTED = [
   'liu', 'guan', 'zhang', 'zhao', 'soldier-spear', 'soldier-archer',
 ];
 
-test('all current battlefield characters have pixel-art definitions', async () => {
-  const source = await readFile(new URL('../character-art-v1.js', import.meta.url), 'utf8');
+test('all current battlefield characters have smooth vector profiles', async () => {
+  const source = await readFile(new URL('../character-art-v2.js', import.meta.url), 'utf8');
   for (const id of EXPECTED) {
     assert.ok(HEROES[id], `content HEROES.${id} is missing`);
-    assert.match(source, new RegExp(`(?:^|\\s|['\"])${id.replace('-', '\\-')}(?:['\"]|:)`), `pixel definition ${id} is missing`);
+    assert.match(source, new RegExp(`(?:^|\\s|['\"])${id.replace('-', '\\-')}(?:['\"]|:)`), `vector profile ${id} is missing`);
   }
-  assert.match(source, /heroCount:ORDER\.length/);
-  assert.match(source, /drawPortrait/);
-  assert.match(source, /drawSprite/);
+  assert.match(source, /renderer:'vector-svg'/);
+  assert.match(source, /commercial-unit-v2/);
+  assert.match(source, /commercial-portrait-v2/);
   assert.doesNotMatch(source, /raw\.githubusercontent|cdn\.jsdelivr|ASSET_BASE/);
 });
 
-test('HTML cache version and commercial pixel integration are consistent', async () => {
+test('HTML loads commercial vector and story assets without the retired pixel renderer', async () => {
   const html = await readFile(new URL('../index.html', import.meta.url), 'utf8');
-  assert.match(html, /character-art-v1\.css\?v=20260819-2/);
-  assert.match(html, /pixel-geometry-fix\.css\?v=20260819-2/);
-  assert.match(html, /commercial-v1\.css\?v=20260819-2/);
-  assert.match(html, /mobile-command-v1\.css\?v=20260819-2/);
-  assert.match(html, /commercial-v1\.js\?v=20260819-2/);
-  assert.match(html, /mobile-command-v1\.js\?v=20260819-2/);
-  assert.match(html, /character-art-v1\.js\?v=20260819-2/);
-  assert.match(html, /12종 픽셀 캐릭터/);
+  assert.match(html, /character-art-v2\.css\?v=0\.8\.1/);
+  assert.match(html, /story-director-v2\.css\?v=0\.8\.1/);
+  assert.match(html, /commercial-v1\.css\?v=0\.8\.1/);
+  assert.match(html, /mobile-command-v1\.css\?v=0\.8\.1/);
+  assert.match(html, /commercial-v1\.js\?v=0\.8\.1/);
+  assert.match(html, /mobile-command-v1\.js\?v=0\.8\.1/);
+  assert.match(html, /character-art-v2\.js\?v=0\.8\.1/);
+  assert.match(html, /story-director-v2\.js\?v=0\.8\.1/);
+  assert.doesNotMatch(html, /character-art-v1|pixel-geometry-fix|12종 픽셀 캐릭터/);
 });
 
-test('pixel battle units cannot inherit runaway transform animations', async () => {
-  const css = await readFile(new URL('../pixel-geometry-fix.css', import.meta.url), 'utf8');
-  assert.match(css, /\.unit-layer\s*\{/);
-  assert.match(css, /\.battle-unit\[data-pixel-unit\]/);
-  assert.match(css, /transform:none!important/);
-  assert.match(css, /translate:none!important/);
-  assert.match(css, /scale:none!important/);
-  assert.match(css, /rotate:none!important/);
-  assert.match(css, /animation:none!important/);
-  assert.match(css, /\.pixel-sprite-v2\.unit/);
+test('vector units use compact geometry and animated combat states', async () => {
+  const css = await readFile(new URL('../character-art-v2.css', import.meta.url), 'utf8');
+  const script = await readFile(new URL('../character-art-v2.js', import.meta.url), 'utf8');
+  assert.match(css, /image-rendering:auto!important/);
+  assert.match(css, /\.battle-unit \.hero-portrait\.commercial-unit-v2/);
+  assert.match(css, /cv2-walk-body/);
+  assert.match(css, /commercial-motion-v2/);
+  for (const state of ['idle', 'walk', 'attack', 'skill', 'hit', 'guard', 'victory', 'retreat']) {
+    assert.match(script, new RegExp(`'${state}'`));
+  }
+  assert.doesNotMatch(css, /image-rendering:\s*pixelated/);
 });
