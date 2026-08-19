@@ -1,0 +1,16 @@
+@media(max-width:760px){
+  .commercial-release-v07 .unit-command-panel{overflow:hidden;transform:translateY(calc(100% - 58px));will-change:transform}
+  .commercial-release-v07 .unit-command-panel[data-mobile-command="ready"][data-mobile-collapsed="false"]{max-height:min(52dvh,440px);overflow:auto;overscroll-behavior:contain;transform:none}
+  .commercial-release-v07 .unit-command-panel[data-mobile-command="ready"][data-mobile-collapsed="true"]{transform:translateY(calc(100% - 58px))}
+  .commercial-release-v07 .unit-command-panel[data-mobile-command="empty"]{transform:translateY(calc(100% - 58px))}
+  .mobile-command-handle{position:sticky;top:0;z-index:12;display:flex;align-items:center;gap:8px;width:100%;min-height:50px;padding:8px 11px;border:0;border-bottom:1px solid rgba(244,229,201,.11);background:linear-gradient(90deg,rgba(26,34,29,.98),rgba(13,19,16,.98));color:#f1dfbc;text-align:left;box-shadow:0 7px 18px rgba(0,0,0,.26)}
+  .mobile-command-handle>span{display:grid;place-items:center;width:31px;height:31px;border-radius:9px;background:linear-gradient(145deg,#a64c39,#733128);font-size:15px}
+  .mobile-command-handle>b{font-size:10px}.mobile-command-handle>small{flex:1;color:rgba(241,223,188,.48);font-size:7px}.mobile-command-handle>i{font-size:16px;font-style:normal;color:#d4b36d}
+  .commercial-release-v07 .unit-command-panel[data-mobile-command="empty"] .mobile-command-handle{opacity:.55}
+  .commercial-release-v07 .unit-profile{padding-top:3px}
+  .commercial-release-v07 .command-grid{position:sticky;bottom:0;z-index:10;margin:9px -7px -7px;padding:8px 7px calc(8px + env(safe-area-inset-bottom));background:linear-gradient(180deg,rgba(11,15,13,.2),rgba(11,15,13,.99) 24%);backdrop-filter:blur(12px)}
+  .commercial-release-v07 .command-grid button{min-height:44px;border-color:rgba(232,205,148,.18);background:rgba(255,255,255,.065)}
+  .commercial-release-v07 .command-grid button.active{border-color:#d3ad61;background:linear-gradient(145deg,rgba(210,173,99,.22),rgba(159,73,57,.16));box-shadow:0 0 0 1px rgba(210,173,99,.12)}
+  .commercial-release-v07 .battlefield-scroll{padding-bottom:56px}
+}
+@media(min-width:761px){.mobile-command-handle{display:none}}
