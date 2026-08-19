@@ -34,9 +34,9 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          count=$(find .commercial-alpha-bootstrap -maxdepth 1 -name 'source.tar.xz.b64.part*' 2>/dev/null | wc -l)
-          test "$count" -eq 5
-          cat .commercial-alpha-bootstrap/source.tar.xz.b64.part* | base64 --decode > /tmp/threecountry-commercial-alpha.tar.xz
+          payload='.commercial-alpha-bootstrap/source.tar.xz.b64'
+          test -s "$payload"
+          base64 --decode "$payload" > /tmp/threecountry-commercial-alpha.tar.xz
           rm -rf /tmp/threecountry-commercial-alpha
           mkdir -p /tmp/threecountry-commercial-alpha
           tar -xJf /tmp/threecountry-commercial-alpha.tar.xz -C /tmp/threecountry-commercial-alpha
