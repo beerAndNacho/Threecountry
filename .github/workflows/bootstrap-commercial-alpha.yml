@@ -1,3 +1,4 @@
+# Triggered after all five verified source payload parts were uploaded.
 name: bootstrap commercial alpha source
 
 on:
