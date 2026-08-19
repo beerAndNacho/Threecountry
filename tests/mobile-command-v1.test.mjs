@@ -6,8 +6,8 @@ test('mobile command module exposes selected unit commands without hover', async
   const script = await readFile(new URL('../mobile-command-v1.js', import.meta.url), 'utf8');
   const css = await readFile(new URL('../mobile-command-v1.css', import.meta.url), 'utf8');
   assert.match(script, /data-mobile-command-toggle/);
-  assert.match(script, /data\.mobileCommand = profile \? 'ready' : 'empty'/);
-  assert.match(script, /data\.mobileCollapsed = 'false'/);
+  assert.match(script, /panel\.dataset\.mobileCommand = profile \? 'ready' : 'empty'/);
+  assert.match(script, /panel\.dataset\.mobileCollapsed = 'false'/);
   assert.match(script, /command-attack/);
   assert.match(css, /data-mobile-command="ready"\]\[data-mobile-collapsed="false"\]/);
   assert.match(css, /transform:none/);
