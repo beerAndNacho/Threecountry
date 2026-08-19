@@ -1,5 +1,10 @@
 import { HEROES, PLAYER_ROSTER } from './content.js';
 
+const BASE_HERO_STATS = Object.fromEntries(PLAYER_ROSTER.map((heroId) => [heroId, {
+  maxHp: HEROES[heroId].maxHp, attack: HEROES[heroId].attack, defense: HEROES[heroId].defense,
+  magic: HEROES[heroId].magic, speed: HEROES[heroId].speed,
+}]));
+
 export const COMMERCIAL_VERSION = 1;
 export const COMMERCIAL_KEY = 'threecountry:commercial:v1';
 
@@ -90,7 +95,7 @@ export function equipmentStats(heroId, meta) {
 }
 
 export function heroGrowthStats(heroId, meta) {
-  const hero = HEROES[heroId];
+  const hero = BASE_HERO_STATS[heroId] || HEROES[heroId];
   if (!hero) return null;
   const growth = meta?.progression?.[heroId] || { level: 1, xp: 0 };
   const step = Math.max(0, Number(growth.level || 1) - 1);

@@ -1,5 +1,5 @@
 import { CHAPTER, CLASSES, HEROES, PLAYER_ROSTER, SAVE_KEY, TERRAIN } from './content.js';
-import { forecastAction } from './engine.js';
+import { forecastAction, syncCommercialHeroStats } from './forecast-action.js';
 import {
   EQUIPMENT, applyExperience, heroGrowthStats, loadCommercialMeta,
   saveCommercialMeta, xpForLevel,
@@ -26,6 +26,7 @@ function loadMainSave() {
 
 function writeMeta(next = meta) {
   meta = saveCommercialMeta(next);
+  syncCommercialHeroStats(meta);
   return meta;
 }
 
