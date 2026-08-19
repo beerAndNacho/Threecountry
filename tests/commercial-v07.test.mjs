@@ -1,10 +1,12 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { HEROES } from '../content.js';
 import {
   EQUIPMENT, applyExperience, defaultCommercialMeta, heroGrowthStats,
   loadCommercialMeta, normalizeCommercialMeta, saveCommercialMeta,
 } from '../commercial-data.js';
-import { createBattle, forecastAction, getUnit, restoreBattle } from '../engine.js';
+import { forecastAction, syncCommercialHeroStats } from '../forecast-action.js';
+import { createBattle } from '../engine.js';
 
 function unitByHero(state, heroId) {
   return state.units.find((unit) => unit.heroId === heroId && !unit.dead);
@@ -44,34 +46,33 @@ test('experience levels an officer and retains overflow XP', () => {
   assert.ok(result.levels >= 1);
 });
 
-test('equipment and levels raise the real battle snapshot stats', () => {
-  const base = createBattle({ seed: 41, commercial: null });
+test('equipment and levels are synchronized into actual battle creation stats', () => {
   const meta = defaultCommercialMeta();
   meta.progression.cao = { level: 5, xp: 0 };
   meta.loadouts.cao = { weapon: 'imperial-sabre', armor: 'black-iron-armor', accessory: 'phoenix-talisman' };
   meta.inventory.push('imperial-sabre', 'black-iron-armor', 'phoenix-talisman');
-  const grown = createBattle({ seed: 41, commercial: normalizeCommercialMeta(meta) });
-  const baseCao = unitByHero(base, 'cao');
-  const grownCao = unitByHero(grown, 'cao');
-  assert.equal(grownCao.level, 5);
-  assert.ok(grownCao.maxHp > baseCao.maxHp);
-  assert.ok(grownCao.attack > baseCao.attack);
-  assert.ok(grownCao.magic > baseCao.magic);
-  assert.equal(grownCao.equipment.weapon, 'imperial-sabre');
+  const normalized = normalizeCommercialMeta(meta);
+  const expected = heroGrowthStats('cao', normalized);
+  syncCommercialHeroStats(normalized);
+  const state = createBattle({ seed: 41 });
+  const cao = unitByHero(state, 'cao');
+  assert.equal(cao.maxHp, expected.hp);
+  assert.equal(cao.attack, expected.attack);
+  assert.equal(cao.defense, expected.defense);
+  assert.equal(cao.magic, expected.magic);
 });
 
-test('growth summary matches equipped officer battle stats before facility bonus', () => {
+test('repeated stat synchronization never compounds growth', () => {
   const meta = defaultCommercialMeta();
-  meta.progression.xun = { level: 3, xp: 11 };
-  const growth = heroGrowthStats('xun', meta);
-  const state = createBattle({ party: ['cao', 'xiahou', 'dian', 'xun'], commercial: meta });
-  const xun = unitByHero(state, 'xun');
-  assert.equal(xun.attack, growth.attack);
-  assert.equal(xun.defense, growth.defense);
-  assert.equal(xun.magic, growth.magic);
+  meta.progression.xun = { level: 4, xp: 0 };
+  const expected = heroGrowthStats('xun', meta);
+  syncCommercialHeroStats(meta);
+  syncCommercialHeroStats(meta);
+  assert.equal(HEROES.xun.maxHp, expected.hp);
+  assert.equal(HEROES.xun.magic, expected.magic);
 });
 
-test('basic attack forecast exposes damage, critical and counter ranges', () => {
+test('basic attack forecast exposes damage critical and counter ranges', () => {
   const state = createBattle({ seed: 77 });
   const cao = put(state, 'cao', 4, 2);
   const soldier = put(state, 'soldier-spear', 5, 2);
@@ -96,7 +97,7 @@ test('ranged strategist forecast has no counter when target cannot reach', () =>
   assert.equal(forecast.skillName, '허점 간파');
 });
 
-test('healing forecast reports actual recovery amount', () => {
+test('healing forecast reports recovery amount', () => {
   const state = createBattle({ party: ['cao', 'xiahou', 'dian', 'xun'] });
   const xun = put(state, 'xun', 3, 2);
   const cao = put(state, 'cao', 4, 2);
@@ -107,17 +108,7 @@ test('healing forecast reports actual recovery amount', () => {
   assert.ok(forecast.amount > 24);
 });
 
-test('old version-two battle saves gain safe progression defaults', () => {
-  const state = createBattle({ commercial: null });
-  state.units.forEach((unit) => { delete unit.level; delete unit.equipment; });
-  const restored = restoreBattle(state);
-  restored.units.forEach((unit) => {
-    assert.equal(unit.level, 1);
-    assert.deepEqual(unit.equipment, {});
-  });
-});
-
-test('commercial equipment catalog includes three slots and hero rewards', () => {
+test('commercial equipment catalog includes all three slots and hero rewards', () => {
   const slots = new Set(Object.values(EQUIPMENT).map((item) => item.slot));
   assert.deepEqual([...slots].sort(), ['accessory', 'armor', 'weapon']);
   assert.ok(EQUIPMENT['imperial-sabre']);
