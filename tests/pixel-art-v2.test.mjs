@@ -20,12 +20,14 @@ test('all current battlefield characters have pixel-art definitions', async () =
   assert.doesNotMatch(source, /raw\.githubusercontent|cdn\.jsdelivr|ASSET_BASE/);
 });
 
-test('HTML cache version and pixel integration are consistent', async () => {
+test('HTML cache version and commercial pixel integration are consistent', async () => {
   const html = await readFile(new URL('../index.html', import.meta.url), 'utf8');
-  assert.match(html, /character-art-v1\.css\?v=20260818-10/);
-  assert.match(html, /pixel-geometry-fix\.css\?v=20260818-10/);
-  assert.match(html, /character-art-v1\.js\?v=20260818-10/);
-  assert.match(html, /12종 캐릭터/);
+  assert.match(html, /character-art-v1\.css\?v=20260819-1/);
+  assert.match(html, /pixel-geometry-fix\.css\?v=20260819-1/);
+  assert.match(html, /commercial-v1\.css\?v=20260819-1/);
+  assert.match(html, /commercial-v1\.js\?v=20260819-1/);
+  assert.match(html, /character-art-v1\.js\?v=20260819-1/);
+  assert.match(html, /12종 픽셀 캐릭터/);
 });
 
 test('pixel battle units cannot inherit runaway transform animations', async () => {

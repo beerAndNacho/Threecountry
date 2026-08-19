@@ -1,0 +1,61 @@
+name: apply commercial SRPG v0.7
+
+on:
+  push:
+    branches: [commercial-v0.7]
+    paths:
+      - '.github/workflows/apply-commercial-v07.yml'
+      - 'scripts/apply-commercial-v07.mjs'
+      - 'commercial-data.js'
+      - 'commercial-v1.js'
+      - 'commercial-v1.css'
+      - 'tests/commercial-v07.test.mjs'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: commercial-v07-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-commercial-upgrade:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Apply source patch
+        run: node scripts/apply-commercial-v07.mjs
+      - name: Install
+        run: npm ci
+      - name: Build and run all engine tests
+        run: npm run build
+      - name: Verify commercial build graph
+        shell: bash
+        run: |
+          set -euo pipefail
+          for file in index.html commercial-v1.css commercial-data.js commercial-v1.js engine.js character-art-v1.js; do
+            test -s "dist/${file}"
+          done
+          grep -q 'commercial-v1.js?v=20260819-1' dist/index.html
+          grep -q 'commercial-v1.css?v=20260819-1' dist/index.html
+          grep -q 'forecastAction' dist/engine.js
+          grep -q '__commercialV07' dist/commercial-v1.js
+          grep -q 'imperial-sabre' dist/commercial-data.js
+      - name: Commit generated commercial source
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add engine.js index.html scripts/build.mjs package.json package-lock.json README.md
+          git commit -m 'feat: integrate progression equipment and combat forecast'
+          git push
