@@ -1,6 +1,10 @@
 name: apply commercial alpha overlay
 
 on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/apply-commercial-alpha.yml'
   pull_request_target:
     branches: [main]
     types: [opened, synchronize, reopened, ready_for_review]
@@ -15,7 +19,7 @@ concurrency:
 
 jobs:
   apply:
-    if: github.event.pull_request.head.ref == 'commercial-alpha' && github.event.pull_request.head.repo.full_name == github.repository
+    if: github.event_name == 'push' || (github.event.pull_request.head.ref == 'commercial-alpha' && github.event.pull_request.head.repo.full_name == github.repository)
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
