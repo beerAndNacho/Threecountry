@@ -1,4 +1,4 @@
-name: apply commercial alpha benchmark
+name: apply commercial alpha overlay
 
 on:
   push:
@@ -33,37 +33,88 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
+          cache: npm
 
-      - name: Reassemble, replace and verify source
+      - name: Reassemble and apply verified v0.8 overlay
         shell: bash
         run: |
           set -euo pipefail
-          single='.commercial-alpha-bootstrap/source.tar.xz.b64'
-          if [ -s "$single" ]; then
-            base64 --decode "$single" > /tmp/threecountry-commercial-alpha.tar.xz
-          else
-            count=$(find .commercial-alpha-bootstrap -maxdepth 1 -name 'source.tar.xz.b64.part*' | wc -l)
-            test "$count" -eq 5
-            cat .commercial-alpha-bootstrap/source.tar.xz.b64.part* | base64 --decode > /tmp/threecountry-commercial-alpha.tar.xz
-          fi
-          rm -rf /tmp/threecountry-commercial-alpha
-          mkdir -p /tmp/threecountry-commercial-alpha
-          tar -xJf /tmp/threecountry-commercial-alpha.tar.xz -C /tmp/threecountry-commercial-alpha
+          count=$(find .commercial-v08-bootstrap -maxdepth 1 -name 'overlay.tar.xz.b64.part*' 2>/dev/null | wc -l)
+          test "$count" -eq 3
+          cat .commercial-v08-bootstrap/overlay.tar.xz.b64.part* | base64 --decode > /tmp/threecountry-commercial-v08.tar.xz
+          tar -xJf /tmp/threecountry-commercial-v08.tar.xz -C .
 
-          find . -mindepth 1 -maxdepth 1 ! -name '.git' ! -name '.github' ! -name '.commercial-alpha-bootstrap' -exec rm -rf {} +
-          rm -rf .github/workflows
-          cp -a /tmp/threecountry-commercial-alpha/. .
-          rm -rf .commercial-alpha-bootstrap
+          rm -f character-art-v1.js character-art-v1.css pixel-geometry-fix.css
+          rm -rf .commercial-v08-bootstrap .commercial-alpha-bootstrap
           rm -f .github/workflows/bootstrap-commercial-alpha.yml
+          rm -f .github/workflows/apply-character-art-assets.yml
+          rm -f .github/workflows/apply-commercial-v07.yml
+          rm -f .github/workflows/apply-commercial-v08.yml
 
+          cat > .github/workflows/ci.yml <<'YAML'
+          name: ci
+
+          on:
+            push:
+              branches: [main, commercial-alpha]
+            pull_request:
+
+          permissions:
+            contents: read
+
+          concurrency:
+            group: threecountry-srpg-${{ github.ref }}
+            cancel-in-progress: true
+
+          jobs:
+            test:
+              runs-on: ubuntu-latest
+              timeout-minutes: 10
+              steps:
+                - uses: actions/checkout@v4
+                - uses: actions/setup-node@v4
+                  with:
+                    node-version: 22
+                    cache: npm
+                - name: Install
+                  run: npm ci
+                - name: Build and test
+                  run: npm run build
+                - name: Verify deployable commercial alpha files
+                  run: |
+                    test -s dist/index.html
+                    test -s dist/styles.css
+                    test -s dist/gameplay-v4.css
+                    test -s dist/character-art-v2.css
+                    test -s dist/story-director-v2.css
+                    test -s dist/app.js
+                    test -s dist/gameplay-v4.js
+                    test -s dist/character-art-v2.js
+                    test -s dist/story-director-v2.js
+                    grep -q 'character-art-v2.js' dist/index.html
+                    grep -q 'story-director-v2.js' dist/index.html
+                    ! grep -q 'character-art-v1' dist/index.html
+                    ! grep -q 'pixel-geometry-fix' dist/index.html
+          YAML
+
+          npm ci
           npm run build
+          test -s dist/character-art-v2.js
+          test -s dist/story-director-v2.js
+          grep -q 'Commercial Art Alpha' dist/index.html
+          ! grep -q 'character-art-v1' dist/index.html
+          ! grep -q 'pixel-geometry-fix' dist/index.html
 
-      - name: Commit verified commercial alpha
+      - name: Commit verified commercial alpha v0.8
         shell: bash
         run: |
           set -euo pipefail
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add -A
-          git commit -m 'feat: add isolated commercial alpha benchmark'
+          if git diff --cached --quiet; then
+            echo 'No commercial alpha changes to commit.'
+            exit 0
+          fi
+          git commit -m 'feat: add vector character art and branching story alpha'
           git push origin HEAD:commercial-alpha
