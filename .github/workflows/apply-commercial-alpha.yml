@@ -1,10 +1,6 @@
 name: apply commercial alpha overlay
 
 on:
-  push:
-    branches: [main]
-    paths:
-      - '.github/workflows/apply-commercial-alpha.yml'
   pull_request_target:
     branches: [main]
     types: [opened, synchronize, reopened, ready_for_review]
@@ -19,7 +15,7 @@ concurrency:
 
 jobs:
   apply:
-    if: github.event_name == 'push' || (github.event.pull_request.head.ref == 'commercial-alpha' && github.event.pull_request.head.repo.full_name == github.repository)
+    if: github.event.pull_request.head.ref == 'commercial-alpha' && github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -50,52 +46,6 @@ jobs:
           rm -f .github/workflows/apply-character-art-assets.yml
           rm -f .github/workflows/apply-commercial-v07.yml
           rm -f .github/workflows/apply-commercial-v08.yml
-
-          cat > .github/workflows/ci.yml <<'YAML'
-          name: ci
-
-          on:
-            push:
-              branches: [main, commercial-alpha]
-            pull_request:
-
-          permissions:
-            contents: read
-
-          concurrency:
-            group: threecountry-srpg-${{ github.ref }}
-            cancel-in-progress: true
-
-          jobs:
-            test:
-              runs-on: ubuntu-latest
-              timeout-minutes: 10
-              steps:
-                - uses: actions/checkout@v4
-                - uses: actions/setup-node@v4
-                  with:
-                    node-version: 22
-                    cache: npm
-                - name: Install
-                  run: npm ci
-                - name: Build and test
-                  run: npm run build
-                - name: Verify deployable commercial alpha files
-                  run: |
-                    test -s dist/index.html
-                    test -s dist/styles.css
-                    test -s dist/gameplay-v4.css
-                    test -s dist/character-art-v2.css
-                    test -s dist/story-director-v2.css
-                    test -s dist/app.js
-                    test -s dist/gameplay-v4.js
-                    test -s dist/character-art-v2.js
-                    test -s dist/story-director-v2.js
-                    grep -q 'character-art-v2.js' dist/index.html
-                    grep -q 'story-director-v2.js' dist/index.html
-                    ! grep -q 'character-art-v1' dist/index.html
-                    ! grep -q 'pixel-geometry-fix' dist/index.html
-          YAML
 
           npm ci
           npm run build
