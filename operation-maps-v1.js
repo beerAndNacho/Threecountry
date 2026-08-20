@@ -1,4 +1,4 @@
-import { HEROES, SAVE_KEY } from './content.js';
+import { HEROES, SAVE_KEY, TERRAIN } from './content.js';
 import { OPERATION_MAPS, OPERATION_MAP_VERSION, validateOperationMaps } from './operation-map-data.js';
 
 let queued = false;
@@ -10,6 +10,7 @@ const parse = (value, fallback) => { try { return value ? JSON.parse(value) : fa
 const readSave = () => parse(localStorage.getItem(SAVE_KEY), null);
 const writeSave = (save) => { try { localStorage.setItem(SAVE_KEY, JSON.stringify(save)); return true; } catch { return false; } };
 const clone = (value) => structuredClone(value);
+const nameToHero = new Map(Object.entries(HEROES).map(([id, hero]) => [hero.name, id]));
 
 function currentMap(save) {
   const id = save?.battle?.flags?.operationId || save?.operation?.id;
@@ -129,9 +130,66 @@ function briefingMarkup(map, screen) {
   </section>`;
 }
 
+function mapCellsMarkup(map) {
+  return map.terrain.flatMap((row, y) => row.map((terrainId, x) => {
+    const objective = x === map.objective.x && y === map.objective.y;
+    return `<i class="terrain-${terrainId} ${objective ? 'objective' : ''}" data-x="${x}" data-y="${y}" title="${TERRAIN[terrainId]?.name || terrainId}"></i>`;
+  })).join('');
+}
+
+function injectOperationThumbnails() {
+  document.querySelectorAll('[data-ocv1-operation]:not([data-omap-thumb-ready])').forEach((card) => {
+    const map = OPERATION_MAPS[card.dataset.ocv1Operation];
+    if (!map) return;
+    card.dataset.omapThumbReady = '1';
+    const paragraph = card.querySelector(':scope > p');
+    const markup = `<div class="omap-thumb" data-omap-thumb="${map.id}" data-weather="${map.weatherId}"><div>${mapCellsMarkup(map)}</div><span>${map.weather}</span></div>`;
+    if (paragraph) paragraph.insertAdjacentHTML('beforebegin', markup);
+    else card.insertAdjacentHTML('beforeend', markup);
+  });
+}
+
+function updatePreviewTerrain(preview, map) {
+  const cells = [...preview.querySelectorAll(':scope > .terrain')];
+  if (cells.length !== 96) return false;
+  map.terrain.flat().forEach((terrainId, index) => {
+    const cell = cells[index];
+    cell.className = `terrain ${terrainId}`;
+    cell.querySelector('i')?.replaceChildren(document.createTextNode(TERRAIN[terrainId]?.icon || '·'));
+  });
+  return true;
+}
+
+function updatePreviewUnits(preview, map) {
+  [...preview.querySelectorAll('.preview-unit.player')].forEach((unit, index) => {
+    const position = map.playerSpawns[index];
+    if (!position) return;
+    unit.style.setProperty('--x', position.x);
+    unit.style.setProperty('--y', position.y);
+  });
+  [...preview.querySelectorAll('.preview-unit.enemy')].forEach((unit) => {
+    const name = unit.querySelector('b')?.textContent?.trim();
+    const heroId = nameToHero.get(name);
+    const position = map.enemySpawns[heroId];
+    if (!position) return;
+    unit.style.setProperty('--x', position.x);
+    unit.style.setProperty('--y', position.y);
+  });
+}
+
+function applyDeploymentPreview(map) {
+  const preview = document.querySelector('.deployment-screen .preview-grid');
+  if (!preview || preview.dataset.operationMap === map.id) return;
+  if (!updatePreviewTerrain(preview, map)) return;
+  updatePreviewUnits(preview, map);
+  preview.dataset.operationMap = map.id;
+  preview.dataset.operationWeather = map.weatherId;
+}
+
 function injectUi() {
   const save = readSave();
   const map = currentMap(save);
+  injectOperationThumbnails();
   if (!map) return;
   const battleScreen = document.querySelector('.battle-screen,.battlefield-shell');
   if (battleScreen) {
@@ -141,9 +199,12 @@ function injectUi() {
     if (top && !battleScreen.querySelector('[data-omap-briefing]')) top.insertAdjacentHTML('afterend', briefingMarkup(map, 'battle'));
   }
   const deployment = document.querySelector('.deployment-screen');
-  if (deployment && !deployment.querySelector('[data-omap-briefing]')) {
-    const target = deployment.querySelector('.deployment-layout,.page-hero');
-    if (target) target.insertAdjacentHTML(target.classList.contains('page-hero') ? 'afterend' : 'beforebegin', briefingMarkup(map, 'deployment'));
+  if (deployment) {
+    applyDeploymentPreview(map);
+    if (!deployment.querySelector('[data-omap-briefing]')) {
+      const target = deployment.querySelector('.deployment-layout,.page-hero');
+      if (target) target.insertAdjacentHTML(target.classList.contains('page-hero') ? 'afterend' : 'beforebegin', briefingMarkup(map, 'deployment'));
+    }
   }
 }
 
@@ -156,7 +217,15 @@ function expose() {
     mapCount: Object.keys(OPERATION_MAPS).length,
     activeMap: map?.id || null,
     validationErrors: [...validationErrors],
-    layouts: Object.values(OPERATION_MAPS).map((entry) => ({ id: entry.id, name: entry.name, weather: entry.weather, rows: entry.terrain.length, columns: entry.terrain[0].length })),
+    layouts: Object.values(OPERATION_MAPS).map((entry) => ({
+      id: entry.id,
+      name: entry.name,
+      weather: entry.weather,
+      rows: entry.terrain.length,
+      columns: entry.terrain[0].length,
+      terrainFingerprint: JSON.stringify(entry.terrain),
+      spawnFingerprint: JSON.stringify([entry.playerSpawns, entry.enemySpawns]),
+    })),
   };
 }
 
