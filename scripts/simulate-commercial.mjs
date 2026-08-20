@@ -120,6 +120,26 @@ function playerAction(inputState, unitId) {
   return unit && !unit.dead && !unit.acted ? actAfterMove(state, unit.id) : state;
 }
 
+function scaleUnit(unit, multiplier) {
+  unit.maxHp = Math.max(1, Math.round(unit.maxHp * multiplier));
+  unit.hp = Math.max(1, Math.round(unit.hp * multiplier));
+  unit.attack = Math.max(1, Math.round(unit.attack * multiplier));
+  unit.defense = Math.max(0, Math.round(unit.defense * multiplier));
+  unit.magic = Math.max(0, Math.round(unit.magic * multiplier));
+  unit.speed = Math.max(1, Math.round(unit.speed * (1 + (multiplier - 1) * 0.45)));
+}
+
+function applyOnboardingOperation(state) {
+  // Mirrors OPERATION 1-1: west-road on normal difficulty.
+  state.turnLimit = 11;
+  state.units.filter((unit) => unit.team === 'enemy').forEach((unit) => scaleUnit(unit, 0.9));
+  state.units.filter((unit) => unit.team === 'player').forEach((unit) => {
+    unit.status.shield = (unit.status.shield || 0) + 8;
+  });
+  state.log.unshift({ turn: 1, tone: 'story', text: '1-1 서쪽 난민로 · 군웅 난이도 시뮬레이션.' });
+  return state;
+}
+
 function simulate(seed) {
   let state = createBattle({
     party: PARTIES[seed % PARTIES.length],
@@ -128,6 +148,7 @@ function simulate(seed) {
     difficulty: 'normal',
     seed: 190001 + seed * 7919,
   });
+  state = applyOnboardingOperation(state);
   let guard = 0;
   while (!state.result && guard < 240) {
     guard += 1;
@@ -182,6 +203,7 @@ const averageTurns = results.reduce((sum, result) => sum + result.turn, 0) / RUN
 const commandCaptures = results.filter((result) => result.reason === 'command-captured').length;
 const leaderVictories = results.filter((result) => result.reason === 'leader-defeated' && result.outcome === 'victory').length;
 const report = {
+  operation: '1-1 west-road / normal',
   runs: RUNS,
   victories,
   defeats,
@@ -193,6 +215,6 @@ const report = {
   minTurn: Math.min(...results.map((result) => result.turn)),
 };
 assert.equal(victories + defeats, RUNS);
-assert.ok(winRate > 0.01 && winRate < 0.99, `broken balance proxy win rate ${winRate}`);
-assert.ok(report.maxTurn <= 13, `invalid max turn ${report.maxTurn}`);
+assert.ok(winRate >= 0.15 && winRate <= 0.65, `onboarding balance proxy outside 15–65%: ${winRate}`);
+assert.ok(report.maxTurn <= 12, `invalid max turn ${report.maxTurn}`);
 console.log(JSON.stringify(report, null, 2));
