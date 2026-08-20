@@ -136,7 +136,7 @@ const M = {
     objective: { x: 11, y: 3 }, playerSpawns: [{x:0,y:6},{x:1,y:7},{x:0,y:7},{x:2,y:7}],
     enemySpawns: [
       {heroId:'dongzhuo',x:11,y:3,leader:true},{heroId:'lubu',x:9,y:4},{heroId:'jiaxu',x:10,y:1},
-      {heroId:'soldier-xiliang',x:8,y:2},{heroId:'soldier-xiliang',x:8,y:6},{heroId:'soldier-crossbow',x:9,y:0},{heroId:'soldier-crossbow',x:10,y:6},
+      {heroId:'soldier-xiliang',x:8,y:2},{heroId:'soldier-xiliang',x:7,y:6},{heroId:'soldier-crossbow',x:9,y:0},{heroId:'soldier-crossbow',x:10,y:6},
     ],
     reinforcements: { turn: 5, units: [{heroId:'soldier-xiliang',x:11,y:7},{heroId:'soldier-crossbow',x:11,y:0}] },
     terrain: [
