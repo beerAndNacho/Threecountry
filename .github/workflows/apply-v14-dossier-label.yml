@@ -1,0 +1,53 @@
+name: apply v1.4 dossier label
+
+on:
+  push:
+    branches: [commercial-alpha]
+    paths:
+      - '.github/workflows/apply-v14-dossier-label.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: commercial-alpha
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Add visible doctrine heading
+        run: |
+          node <<'NODE'
+          const fs = require('node:fs');
+          const path = 'tactical-intel-v1.js';
+          let source = fs.readFileSync(path, 'utf8');
+          const before = '<blockquote>“${esc(lore.doctrine)}”</blockquote>';
+          const after = '<blockquote><small>전투 원칙</small>“${esc(lore.doctrine)}”</blockquote>';
+          if (source.includes(before)) source = source.replace(before, after);
+          if (!source.includes(after)) throw new Error('dossier doctrine label was not applied');
+          fs.writeFileSync(path, source);
+          NODE
+      - name: Verify complete source
+        run: |
+          npm ci
+          npm run build
+          npm run quality
+      - name: Commit verified label
+        run: |
+          if git diff --quiet; then
+            echo 'Label already present.'
+            exit 0
+          fi
+          git config user.name 'Threecountry Quality Bot'
+          git config user.email 'actions@users.noreply.github.com'
+          git add tactical-intel-v1.js
+          git commit -m 'fix: label officer combat doctrine [v14-dossier-label]'
+          git push origin HEAD:commercial-alpha
