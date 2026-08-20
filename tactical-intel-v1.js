@@ -46,7 +46,7 @@ function dossierMarkup(heroId, compact = false) {
     <div class="tiv1-dossier-art">${renderHeroBust(heroId, compact ? 'medium' : 'story')}</div>
     <div class="tiv1-dossier-copy">
       <header><div><small>${classInfo.icon} ${esc(classInfo.name)} · ${esc(hero.title || lore.role || '')}</small><h2>${esc(lore.name)}${lore.courtesy ? `<em>자 ${esc(lore.courtesy)}</em>` : ''}</h2><p>${esc(lore.origin)} · ${lore.age}세 · ${esc(lore.height)} · ${esc(lore.build)}</p></div><span>Lv.${stats.level || 1}</span></header>
-      <blockquote>“${esc(lore.doctrine)}”</blockquote>
+      <blockquote><small>전투 원칙</small>“${esc(lore.doctrine)}”</blockquote>
       <div class="tiv1-profile-grid"><span><small>성정</small><b>${esc(lore.temperament)}</b></span><span><small>목소리</small><b>${esc(lore.voice)}</b></span><span><small>주무기</small><b>${esc(lore.weapon)}</b></span><span><small>갑주</small><b>${esc(lore.armor)}</b></span><span><small>외형 표식</small><b>${esc(lore.mark)}</b></span><span><small>전용기</small><b>${esc(hero.skill?.name || '기본 전술')}</b></span></div>
       <div class="tiv1-stat-row"><span><small>HP</small><b>${stats.hp}</b></span><span><small>공격</small><b>${stats.attack}</b></span><span><small>방어</small><b>${stats.defense}</b></span><span><small>책략</small><b>${stats.magic}</b></span><span><small>속도</small><b>${stats.speed}</b></span></div>
       <section class="tiv1-equipment"><h3>현재 장비</h3>${equipment.map(({ slot, item }) => `<span data-slot="${slot}"><i>${item.icon}</i><b>${esc(item.name)}</b><small>${esc(item.description)}</small></span>`).join('') || '<p>장비 정보 없음</p>'}</section>
