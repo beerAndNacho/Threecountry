@@ -28,7 +28,7 @@ jobs:
         run: npm run build
       - name: Run 2,000 deterministic campaign simulations
         run: npm run quality
-      - name: Verify deployable Luoyang campaign files
+      - name: Verify deployable character and tactics alpha files
         run: |
           test -s dist/index.html
           test -s dist/styles.css
@@ -43,6 +43,8 @@ jobs:
           test -s dist/chapter-two-v1.css
           test -s dist/save-slots-v1.css
           test -s dist/tutorial-v1.css
+          test -s dist/commercial-character-v4.css
+          test -s dist/tactical-intel-v1.css
           test -s dist/app.js
           test -s dist/character-art-v2.js
           test -s dist/chapter-two-art-v1.js
@@ -57,9 +59,12 @@ jobs:
           test -s dist/save-slots-core.js
           test -s dist/save-slots-v1.js
           test -s dist/tutorial-v1.js
-          grep -q 'Luoyang Campaign Alpha v1.3.0' dist/index.html
+          test -s dist/commercial-character-v4.js
+          test -s dist/tactical-intel-v1.js
+          grep -q 'Character & Tactics Alpha v1.4.0' dist/index.html
+          grep -q 'commercial-character-v4.js' dist/index.html
+          grep -q 'tactical-intel-v1.js' dist/index.html
           grep -q 'chapter-two-campaign-v1.js' dist/index.html
-          grep -q 'chapter-two-art-v1.js' dist/index.html
           grep -q 'operation-maps-v1.js' dist/index.html
           grep -q 'save-slots-v1.js' dist/index.html
           grep -q 'tutorial-v1.js' dist/index.html
