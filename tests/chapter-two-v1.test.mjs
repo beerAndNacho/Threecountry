@@ -64,5 +64,5 @@ test('HTML loads chapter two before chapter one processors', () => {
   assert.ok(chapter > 0 && chapter < chapterOne && chapter < maps);
   assert.match(index, /chapter-two-art-v1\.js\?v=1\.3\.0/);
   assert.match(index, /chapter-two-v1\.css\?v=1\.3\.0/);
-  assert.match(index, /Luoyang Campaign Alpha v1\.3\.0/);
+  assert.match(index, /Character & Tactics Alpha v1\.4\.0/);
 });
