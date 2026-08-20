@@ -20,16 +20,17 @@ test('all current battlefield characters have smooth vector profiles', async () 
   assert.doesNotMatch(source, /raw\.githubusercontent|cdn\.jsdelivr|ASSET_BASE/);
 });
 
-test('HTML loads commercial vector and story assets without the retired pixel renderer', async () => {
+test('HTML loads commercial vector, story and operation assets without the retired pixel renderer', async () => {
   const html = await readFile(new URL('../index.html', import.meta.url), 'utf8');
-  assert.match(html, /character-art-v2\.css\?v=0\.8\.1/);
-  assert.match(html, /story-director-v2\.css\?v=0\.8\.1/);
-  assert.match(html, /commercial-v1\.css\?v=0\.8\.1/);
-  assert.match(html, /mobile-command-v1\.css\?v=0\.8\.1/);
-  assert.match(html, /commercial-v1\.js\?v=0\.8\.1/);
-  assert.match(html, /mobile-command-v1\.js\?v=0\.8\.1/);
-  assert.match(html, /character-art-v2\.js\?v=0\.8\.1/);
-  assert.match(html, /story-director-v2\.js\?v=0\.8\.1/);
+  assert.match(html, /character-art-v2\.css\?v=1\.0\.0/);
+  assert.match(html, /story-director-v2\.css\?v=1\.0\.0/);
+  assert.match(html, /commercial-v1\.css\?v=1\.0\.0/);
+  assert.match(html, /mobile-command-v1\.css\?v=1\.0\.0/);
+  assert.match(html, /commercial-v1\.js\?v=1\.0\.0/);
+  assert.match(html, /mobile-command-v1\.js\?v=1\.0\.0/);
+  assert.match(html, /character-art-v2\.js\?v=1\.0\.0/);
+  assert.match(html, /story-director-v2\.js\?v=1\.0\.0/);
+  assert.match(html, /operation-campaign-v1\.js\?v=1\.0\.0/);
   assert.doesNotMatch(html, /character-art-v1|pixel-geometry-fix|12종 픽셀 캐릭터/);
 });
 
