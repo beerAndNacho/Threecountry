@@ -15,8 +15,8 @@ test('mobile command module exposes selected unit commands without hover', async
   assert.match(css, /env\(safe-area-inset-bottom\)/);
 });
 
-test('commercial HTML loads mobile command assets with the current alpha cache version', async () => {
+test('commercial HTML loads mobile command assets with the operation campaign cache version', async () => {
   const html = await readFile(new URL('../index.html', import.meta.url), 'utf8');
-  assert.match(html, /mobile-command-v1\.css\?v=0\.8\.1/);
-  assert.match(html, /mobile-command-v1\.js\?v=0\.8\.1/);
+  assert.match(html, /mobile-command-v1\.css\?v=1\.0\.0/);
+  assert.match(html, /mobile-command-v1\.js\?v=1\.0\.0/);
 });
