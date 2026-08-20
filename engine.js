@@ -485,6 +485,57 @@ export function useSkill(inputState, unitId, targetId = unitId, options = {}) {
     getLivingUnits(state, unit.team).filter((ally) => distance(unit, ally) <= 1).forEach((ally) => { ally.status.shield += 8; });
     pushLog(state, 'skill', `조운의 은창 구원! ${received.hpDamage} 피해.`);
     events.push({ type: 'dash-hit', unitId, targetId, damage: received.hpDamage, to: { x: unit.x, y: unit.y } });
+  } else if (skill.id === 'gate-crusher' && target) {
+    const roll = calculateDamage(state, unit, target, skill.power, false);
+    const received = receiveDamage(state, target, roll.damage, unit.id);
+    const dx = Math.sign(target.x - unit.x);
+    const dy = Math.sign(target.y - unit.y);
+    const nextX = target.x + dx;
+    const nextY = target.y + dy;
+    let pushed = false;
+    if (!target.dead && inBounds(nextX, nextY) && !terrainAt(state, nextX, nextY).blocked && !getUnitAt(state, nextX, nextY)) {
+      target.x = nextX;
+      target.y = nextY;
+      pushed = true;
+    } else if (!target.dead) {
+      target.status.stun = Math.max(target.status.stun, 1);
+    }
+    pushLog(state, 'skill', `화웅의 관문 쇄도! ${received.hpDamage} 피해${pushed ? '와 밀쳐내기' : '와 기절'}.`);
+    events.push({ type: 'push-hit', unitId, targetId, damage: received.hpDamage, pushed, to: pushed ? { x: nextX, y: nextY } : null });
+  } else if (skill.id === 'black-feather' && target) {
+    const roll = calculateDamage(state, unit, target, skill.power, true);
+    const received = receiveDamage(state, target, roll.damage, unit.id);
+    if (!target.dead) {
+      target.status.root = Math.max(target.status.root, 2);
+      target.status.attackDown = Math.max(target.status.attackDown, 6);
+    }
+    pushLog(state, 'skill', `가후의 흑우의 계! ${received.hpDamage} 피해, 이동 봉쇄와 공격 약화.`);
+    events.push({ type: 'skill-hit', unitId, targetId, damage: received.hpDamage, status: 'root-attack-down' });
+  } else if (skill.id === 'sky-piercer' && target) {
+    const roll = calculateDamage(state, unit, target, skill.power, false);
+    const received = receiveDamage(state, target, roll.damage, unit.id);
+    const splashes = [];
+    getLivingUnits(state, target.team)
+      .filter((candidate) => candidate.id !== target.id && distance(candidate, target) === 1)
+      .forEach((candidate) => {
+        const splash = receiveDamage(state, candidate, Math.max(4, Math.round(roll.damage * 0.35)), unit.id, { ignoreGuard: true });
+        splashes.push({ targetId: candidate.id, damage: splash.hpDamage });
+      });
+    unit.status.shield += 10;
+    pushLog(state, 'skill', `여포의 방천화극! ${received.hpDamage} 피해${splashes.length ? `, 주변 ${splashes.length}개 부대에 충격` : ''}.`);
+    events.push({ type: 'area-pierce', unitId, targetId, damage: received.hpDamage, splashes, shield: 10 });
+  } else if (skill.id === 'tyrant-order') {
+    const allies = getLivingUnits(state, unit.team).filter((ally) => distance(unit, ally) <= 2);
+    const enemies = getLivingUnits(state, unit.team === 'player' ? 'enemy' : 'player').filter((enemy) => distance(unit, enemy) <= 2);
+    allies.forEach((ally) => {
+      addTimedStatus(ally, 'attackUp', 5, 2);
+      addTimedStatus(ally, 'defenseUp', 3, 2);
+      addTimedStatus(ally, 'speedUp', 2, 2);
+    });
+    enemies.forEach((enemy) => { enemy.status.attackDown = Math.max(enemy.status.attackDown, 4); });
+    unit.status.shield += 12;
+    pushLog(state, 'skill', `동탁의 폭군의 호령! 서량군 ${allies.length}개 부대가 강화되고 적군 ${enemies.length}개 부대가 위축됩니다.`);
+    events.push({ type: 'tyrant-order', unitId, allies: allies.map((ally) => ally.id), enemies: enemies.map((enemy) => enemy.id), shield: 12 });
   } else {
     return { ok: false, state: inputState, message: '아직 구현되지 않은 기술입니다.' };
   }
@@ -588,6 +639,10 @@ function potentialSkillTarget(state, unit) {
     if (hero.skill.id === 'thunder-roar') {
       const nearby = getLivingUnits(state, 'player').filter((target) => distance(unit, target) <= 2);
       return nearby.length >= 2 ? unit : null;
+    }
+    if (hero.skill.id === 'tyrant-order') {
+      const allies = getLivingUnits(state, unit.team).filter((ally) => distance(unit, ally) <= 2);
+      return state.turn === 1 || (allies.length >= 2 && unit.hp / unit.maxHp < 0.76) ? unit : null;
     }
     return unit.hp / unit.maxHp < 0.6 ? unit : null;
   }
