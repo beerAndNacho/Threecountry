@@ -203,6 +203,9 @@ function installUnitInspector() {
     inspector.className = 'tiv1-unit-inspector';
     panel.append(inspector);
   }
+  const signature = `${heroId}:${hp.hp}:${hp.maxHp}:${terrainId}:${morale}`;
+  if (inspector.dataset.signature === signature) return;
+  inspector.dataset.signature = signature;
   inspector.dataset.hero = heroId;
   inspector.innerHTML = `<header><span>${renderHeroBust(heroId, 'medium')}</span><div><small>${esc(lore.origin)} · ${esc(lore.build)}</small><b>${esc(lore.name)} <em>${esc(lore.courtesy ? `자 ${lore.courtesy}` : '')}</em></b><p>${esc(lore.doctrine)}</p></div><button data-tiv1-profile="${heroId}" type="button">상세</button></header>
     <div class="tiv1-readiness"><span><small>전투 의지</small><i><b style="width:${morale}%"></b></i><em>${morale}</em></span><span><small>현재 지형</small><b>${esc(terrain?.name || '평지')}</b></span><span><small>주무기</small><b>${esc(lore.weapon)}</b></span></div>
