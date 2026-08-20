@@ -68,7 +68,7 @@ export const OPERATION_MAPS = {
     playerSpawns: [{ x: 0, y: 6 }, { x: 1, y: 7 }, { x: 0, y: 7 }, { x: 2, y: 7 }],
     enemySpawns: {
       liu: { x: 11, y: 3 }, guan: { x: 9, y: 2 }, zhang: { x: 9, y: 5 }, zhao: { x: 10, y: 6 },
-      'soldier-archer': { x: 10, y: 1 }, 'soldier-spear': { x: 8, y: 4 },
+      'soldier-archer': { x: 10, y: 1 }, 'soldier-spear': { x: 9, y: 4 },
     },
     reinforcements: { turn: 5, difficulties: ['hard', 'legend'], units: [{ heroId: 'soldier-spear', x: 11, y: 7 }, { heroId: 'soldier-archer', x: 11, y: 0 }] },
     terrain: [
