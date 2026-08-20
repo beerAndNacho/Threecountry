@@ -37,6 +37,14 @@ test('tutorial can be restarted dismissed and resumed safely', () => {
   assert.ok(script.includes('lastStep'));
 });
 
+test('tutorial coach remains stable during unrelated DOM mutations', () => {
+  assert.ok(script.includes("const VERSION = '1.2.1'"));
+  assert.ok(script.includes('renderedStepId'));
+  assert.ok(script.includes("existing && renderedStepId === step.id && currentTarget === target"));
+  assert.ok(script.includes('stableCoach: true'));
+  assert.ok(script.includes('data-tutorial-step'));
+});
+
 test('tutorial uses mobile-safe highlight and reduced-motion fallbacks', () => {
   assert.ok(css.includes('.tutorial-target-v1'));
   assert.ok(css.includes('.tutorial-v1'));
@@ -45,7 +53,7 @@ test('tutorial uses mobile-safe highlight and reduced-motion fallbacks', () => {
   assert.ok(css.includes('@media(prefers-reduced-motion:reduce)'));
 });
 
-test('release HTML loads tutorial assets at v1.2.0', () => {
-  assert.ok(html.includes('tutorial-v1.css?v=1.2.0'));
-  assert.ok(html.includes('tutorial-v1.js?v=1.2.0'));
+test('release HTML loads tutorial assets at v1.2.1', () => {
+  assert.ok(html.includes('tutorial-v1.css?v=1.2.1'));
+  assert.ok(html.includes('tutorial-v1.js?v=1.2.1'));
 });
