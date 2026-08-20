@@ -35,9 +35,19 @@ test('runtime applies terrain objective positions weather and high-difficulty re
   assert.ok(OPERATION_MAPS['chenliu-command'].reinforcements.difficulties.includes('legend'));
 });
 
+test('operation selection cards and deployment preview use real map data', () => {
+  for (const token of ['injectOperationThumbnails', 'mapCellsMarkup', 'applyDeploymentPreview', 'updatePreviewTerrain', 'updatePreviewUnits', 'terrainFingerprint', 'spawnFingerprint']) {
+    assert.ok(runtime.includes(token), `missing ${token}`);
+  }
+  assert.ok(css.includes('.omap-thumb'));
+  assert.ok(css.includes('grid-template-columns:repeat(12,1fr)'));
+  assert.ok(css.includes('grid-template-rows:repeat(8,1fr)'));
+  assert.ok(css.includes('.preview-grid[data-operation-weather'));
+});
+
 test('commercial HTML and responsive CSS load operation battlefield assets', () => {
-  assert.ok(html.includes('operation-maps-v1.css?v=1.1.0'));
-  assert.ok(html.includes('operation-maps-v1.js?v=1.1.0'));
+  assert.ok(html.includes('operation-maps-v1.css?v=1.2.0'));
+  assert.ok(html.includes('operation-maps-v1.js?v=1.2.0'));
   assert.ok(css.includes('[data-operation-weather="mist"]'));
   assert.ok(css.includes('[data-operation-weather="rain"]'));
   assert.ok(css.includes('[data-operation-weather="wind"]'));
