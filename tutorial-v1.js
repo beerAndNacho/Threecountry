@@ -1,4 +1,4 @@
-const VERSION = '1.2.0';
+const VERSION = '1.2.1';
 const KEY = 'threecountry:tutorial:v1';
 const STEPS = [
   { id: 'title-start', screen: 'title', selector: '[data-action="new-game"]', action: 'new-game', eyebrow: '첫 연대기', title: '새 연대기를 시작하십시오', text: '처음에는 조조군의 시점에서 진류를 확보하는 네 개 작전을 진행합니다.' },
@@ -21,6 +21,7 @@ const STEPS = [
 let state = loadState();
 let queued = false;
 let currentTarget = null;
+let renderedStepId = '';
 let autoTimer = 0;
 
 const esc = (value) => String(value ?? '').replace(/[&<>"']/g, (character) => ({
@@ -80,13 +81,14 @@ function clearTarget() {
 
 function closeCoach() {
   clearTarget();
+  renderedStepId = '';
   document.querySelector('[data-tutorial-v1]')?.remove();
 }
 
 function coachMarkup(step, targetFound) {
   const screenSteps = STEPS.filter((entry) => entry.screen === step.screen);
   const position = screenSteps.findIndex((entry) => entry.id === step.id) + 1;
-  return `<aside class="tutorial-v1 ${targetFound ? 'target-found' : 'waiting'}" data-tutorial-v1><header><span>GUIDE ${position}/${screenSteps.length}</span><button data-tutorial-close type="button">×</button></header><small>${esc(step.eyebrow)}</small><h3>${esc(step.title)}</h3><p>${esc(step.text)}</p><footer>${step.action && targetFound ? `<span>강조된 요소를 직접 눌러 진행하십시오.</span>` : `<button data-tutorial-next type="button">확인 · 다음 <b>→</b></button>`}<button data-tutorial-skip type="button">안내 종료</button></footer></aside>`;
+  return `<aside class="tutorial-v1 ${targetFound ? 'target-found' : 'waiting'}" data-tutorial-v1 data-tutorial-step="${step.id}"><header><span>GUIDE ${position}/${screenSteps.length}</span><button data-tutorial-close type="button">×</button></header><small>${esc(step.eyebrow)}</small><h3>${esc(step.title)}</h3><p>${esc(step.text)}</p><footer>${step.action && targetFound ? `<span>강조된 요소를 직접 눌러 진행하십시오.</span>` : `<button data-tutorial-next type="button">확인 · 다음 <b>→</b></button>`}<button data-tutorial-skip type="button">안내 종료</button></footer></aside>`;
 }
 
 function positionCoach(coach, target) {
@@ -100,7 +102,7 @@ function positionCoach(coach, target) {
   }
   const rect = target.getBoundingClientRect();
   const width = Math.min(330, window.innerWidth - 24);
-  let left = Math.max(12, Math.min(window.innerWidth - width - 12, rect.left + rect.width / 2 - width / 2));
+  const left = Math.max(12, Math.min(window.innerWidth - width - 12, rect.left + rect.width / 2 - width / 2));
   let top = rect.bottom + 12;
   if (top + 230 > window.innerHeight) top = Math.max(12, rect.top - 230);
   coach.style.width = `${width}px`;
@@ -112,10 +114,13 @@ function positionCoach(coach, target) {
 }
 
 function renderCoach() {
-  closeCoach();
-  if (!state.running || document.querySelector('.ssv1-modal,.sd2-modal,.v4-event-modal,.cv2-modal')) return;
+  if (!state.running || document.querySelector('.ssv1-modal,.sd2-modal,.v4-event-modal,.cv2-modal')) {
+    closeCoach();
+    return;
+  }
   const step = activeStep();
   if (!step) {
+    closeCoach();
     const remaining = STEPS.some((entry) => !state.completed.includes(entry.id));
     if (!remaining) {
       state.running = false;
@@ -125,6 +130,13 @@ function renderCoach() {
     return;
   }
   const target = document.querySelector(step.selector);
+  const existing = document.querySelector('[data-tutorial-v1]');
+  if (existing && renderedStepId === step.id && currentTarget === target && (!target || target.isConnected)) {
+    positionCoach(existing, target);
+    return;
+  }
+
+  closeCoach();
   if (target) {
     currentTarget = target;
     target.classList.add('tutorial-target-v1');
@@ -132,18 +144,22 @@ function renderCoach() {
   }
   document.body.insertAdjacentHTML('beforeend', coachMarkup(step, Boolean(target)));
   const coach = document.querySelector('[data-tutorial-v1]');
+  renderedStepId = step.id;
   if (coach) {
     positionCoach(coach, target);
     requestAnimationFrame(() => coach.classList.add('show'));
   }
-  state.lastStep = step.id;
-  persist();
+  if (state.lastStep !== step.id) {
+    state.lastStep = step.id;
+    persist();
+  }
 }
 
 function completeStep(id) {
   if (id && !state.completed.includes(id)) state.completed.push(id);
   state.lastStep = '';
   persist();
+  closeCoach();
   setTimeout(schedule, 140);
 }
 
@@ -199,6 +215,7 @@ function expose() {
     running: state.running,
     completed: state.completed.length,
     currentStep: activeStep()?.id || null,
+    stableCoach: true,
   };
 }
 
