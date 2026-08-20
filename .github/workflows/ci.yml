@@ -28,7 +28,7 @@ jobs:
         run: npm run build
       - name: Run 1,000 deterministic onboarding simulations
         run: npm run quality
-      - name: Verify deployable files
+      - name: Verify deployable release foundation files
         run: |
           test -s dist/index.html
           test -s dist/styles.css
@@ -39,6 +39,8 @@ jobs:
           test -s dist/campaign-story-v3.css
           test -s dist/operation-campaign-v1.css
           test -s dist/operation-maps-v1.css
+          test -s dist/save-slots-v1.css
+          test -s dist/tutorial-v1.css
           test -s dist/app.js
           test -s dist/character-art-v2.js
           test -s dist/story-director-v2.js
@@ -47,8 +49,12 @@ jobs:
           test -s dist/operation-campaign-v1.js
           test -s dist/operation-map-data.js
           test -s dist/operation-maps-v1.js
-          grep -q 'Four Battlefields Alpha' dist/index.html
-          grep -q 'operation-campaign-v1.js' dist/index.html
+          test -s dist/save-slots-core.js
+          test -s dist/save-slots-v1.js
+          test -s dist/tutorial-v1.js
+          grep -q 'Release Foundation Alpha' dist/index.html
           grep -q 'operation-maps-v1.js' dist/index.html
+          grep -q 'save-slots-v1.js' dist/index.html
+          grep -q 'tutorial-v1.js' dist/index.html
           ! grep -q 'character-art-v1' dist/index.html
           ! grep -q 'pixel-geometry-fix' dist/index.html
