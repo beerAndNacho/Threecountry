@@ -1,0 +1,53 @@
+name: stabilize v1.4 selected unit inspector
+
+on:
+  push:
+    branches: [commercial-alpha]
+    paths:
+      - '.github/workflows/apply-v14-inspector-stability.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: commercial-alpha
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Prevent redundant inspector renders
+        run: |
+          node <<'NODE'
+          const fs = require('node:fs');
+          const path = 'tactical-intel-v1.js';
+          let source = fs.readFileSync(path, 'utf8');
+          const before = "  inspector.dataset.hero = heroId;\n  inspector.innerHTML = `<header>";
+          const after = "  const signature = `${heroId}:${hp.hp}:${hp.maxHp}:${terrainId}:${morale}`;\n  if (inspector.dataset.signature === signature) return;\n  inspector.dataset.signature = signature;\n  inspector.dataset.hero = heroId;\n  inspector.innerHTML = `<header>";
+          if (source.includes(before)) source = source.replace(before, after);
+          if (!source.includes('inspector.dataset.signature === signature')) throw new Error('inspector render guard was not applied');
+          fs.writeFileSync(path, source);
+          NODE
+      - name: Verify complete source
+        run: |
+          npm ci
+          npm run build
+          npm run quality
+      - name: Commit verified stability fix
+        run: |
+          if git diff --quiet; then
+            echo 'Guard already present.'
+            exit 0
+          fi
+          git config user.name 'Threecountry Quality Bot'
+          git config user.email 'actions@users.noreply.github.com'
+          git add tactical-intel-v1.js
+          git commit -m 'fix: stabilize selected officer inspector [v14-inspector]'
+          git push origin HEAD:commercial-alpha

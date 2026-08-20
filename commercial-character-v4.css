@@ -1,0 +1,72 @@
+:root {
+  --ccv4-panel: rgba(12, 18, 20, .96);
+  --ccv4-gold: #d8b56d;
+  --ccv4-line: rgba(223, 191, 126, .3);
+}
+
+.hero-portrait[data-commercial-art-v4] {
+  overflow: visible;
+  isolation: isolate;
+  filter: saturate(.94) contrast(1.04);
+  transform-origin: 50% 82%;
+}
+.hero-portrait[data-commercial-art-v4] .ccv4-character { transform-origin: 50% 82%; }
+.hero-portrait[data-commercial-art-v4] .ccv4-halo { animation: ccv4-halo 5.8s ease-in-out infinite; }
+.hero-portrait[data-commercial-art-v4] .ccv4-ink-wash { filter: blur(1.2px); }
+.hero-portrait[data-commercial-art-v4] .ccv4-weathering { mix-blend-mode: screen; }
+.hero-portrait[data-commercial-art-v4] .ccv4-nameplate { opacity: 0; transition: opacity .22s ease; }
+.hero-portrait[data-commercial-art-v4].story .ccv4-nameplate,
+.hero-portrait[data-commercial-art-v4].poster .ccv4-nameplate { opacity: 1; }
+.hero-portrait[data-commercial-art-v4].card .ccv4-nameplate,
+.hero-portrait[data-commercial-art-v4].medium .ccv4-nameplate { display: none; }
+
+.hero-portrait[data-commercial-art-v4][data-state="idle"] .ccv4-character { animation: ccv4-breathe 3.2s ease-in-out infinite; }
+.hero-portrait[data-commercial-art-v4][data-state="walk"] .ccv4-character { animation: ccv4-walk .42s ease-in-out infinite alternate; }
+.hero-portrait[data-commercial-art-v4][data-state="attack"] .ccv4-character { animation: ccv4-attack .52s cubic-bezier(.2,.8,.2,1); }
+.hero-portrait[data-commercial-art-v4][data-state="skill"] .ccv4-character { animation: ccv4-skill .78s cubic-bezier(.16,.8,.18,1); }
+.hero-portrait[data-commercial-art-v4][data-state="hit"] .ccv4-character { animation: ccv4-hit .36s ease-out; }
+.hero-portrait[data-commercial-art-v4][data-state="guard"] .ccv4-character { animation: ccv4-guard .62s ease-out; }
+.hero-portrait[data-commercial-art-v4][data-state="victory"] .ccv4-character { animation: ccv4-victory 1s ease-out both; }
+.hero-portrait[data-commercial-art-v4][data-state="retreat"] .ccv4-character { animation: ccv4-retreat .72s ease-in both; }
+.hero-portrait[data-commercial-art-v4][data-state="skill"] .ccv4-halo { animation: ccv4-skill-glow .8s ease-out; }
+
+.hero-portrait[data-commercial-art-v4][data-hero-id="guan"] .ccv4-beard { transform-origin: 160px 188px; animation: ccv4-beard 3.8s ease-in-out infinite; }
+.hero-portrait[data-commercial-art-v4][data-hero-id="zhang"] .ccv4-character,
+.hero-portrait[data-commercial-art-v4][data-hero-id="dian"] .ccv4-character { filter: contrast(1.06) saturate(1.05); }
+.hero-portrait[data-commercial-art-v4][data-hero-id="guo"] .ccv4-face { filter: saturate(.82) brightness(1.04); }
+.hero-portrait[data-commercial-art-v4][data-hero-id="cao"] .ccv4-headgear { filter: drop-shadow(0 4px 5px rgba(123,35,43,.42)); }
+.hero-portrait[data-commercial-art-v4][data-hero-id="xiahou"] .ccv4-face { filter: contrast(1.08); }
+
+.hero-portrait[data-commercial-depth-v4] .ccv4-micro-detail { pointer-events: none; }
+.battle-unit .hero-portrait[data-commercial-depth-v4] { filter: drop-shadow(0 5px 3px rgba(0,0,0,.58)) saturate(.96); }
+.battle-unit.selected .hero-portrait[data-commercial-depth-v4] { filter: drop-shadow(0 0 7px rgba(239,208,130,.8)) drop-shadow(0 6px 3px rgba(0,0,0,.65)); }
+
+.story-character .hero-portrait[data-commercial-art-v4] { width: min(42vw, 390px); max-height: 72vh; }
+.title-hero .hero-portrait[data-commercial-art-v4] { width: min(36vw, 355px); }
+.roster-card .hero-portrait[data-commercial-art-v4] { width: 100%; min-height: 190px; }
+.commercial-detail-art .hero-portrait[data-commercial-art-v4] { width: min(42vw, 330px); }
+.ccv3-skill-cutin .hero-portrait[data-commercial-art-v4] { width: 230px; transform: translateY(20px) scale(1.1); }
+
+@keyframes ccv4-breathe { 0%,100%{transform:translateY(0) scale(1)} 50%{transform:translateY(-2px) scale(1.006)} }
+@keyframes ccv4-walk { from{transform:translate(-2px,1px) rotate(-.5deg)} to{transform:translate(2px,-2px) rotate(.5deg)} }
+@keyframes ccv4-attack { 0%{transform:translateX(0) rotate(0)} 28%{transform:translateX(-8px) rotate(-2deg)} 56%{transform:translateX(18px) rotate(3deg)} 100%{transform:translateX(0) rotate(0)} }
+@keyframes ccv4-skill { 0%{transform:scale(.96);filter:brightness(.9)} 42%{transform:scale(1.05);filter:brightness(1.35)} 100%{transform:scale(1);filter:brightness(1)} }
+@keyframes ccv4-hit { 0%{transform:translateX(0);filter:brightness(1)} 35%{transform:translateX(-11px);filter:brightness(1.8) saturate(.5)} 100%{transform:translateX(0);filter:brightness(1)} }
+@keyframes ccv4-guard { 0%{transform:scale(1)} 35%{transform:scale(.96) translateY(5px)} 70%{transform:scale(1.03) translateY(-2px)} 100%{transform:scale(1)} }
+@keyframes ccv4-victory { 0%{transform:translateY(8px) scale(.98)} 45%{transform:translateY(-12px) scale(1.04)} 100%{transform:translateY(0) scale(1)} }
+@keyframes ccv4-retreat { to{transform:translateX(-22px) translateY(12px) scale(.86);opacity:0} }
+@keyframes ccv4-halo { 0%,100%{opacity:.72;transform:scale(.98);transform-origin:center} 50%{opacity:1;transform:scale(1.025)} }
+@keyframes ccv4-skill-glow { 0%{opacity:.35;transform:scale(.8);transform-origin:center} 55%{opacity:1;transform:scale(1.16)} 100%{opacity:.72;transform:scale(1)} }
+@keyframes ccv4-beard { 0%,100%{transform:rotate(-.4deg)} 50%{transform:rotate(1.3deg)} }
+
+@media (max-width: 760px) {
+  .story-character .hero-portrait[data-commercial-art-v4] { width: min(68vw, 310px); max-height: 52vh; }
+  .title-hero .hero-portrait[data-commercial-art-v4] { width: min(54vw, 260px); }
+  .roster-card .hero-portrait[data-commercial-art-v4] { min-height: 150px; }
+  .ccv3-skill-cutin .hero-portrait[data-commercial-art-v4] { width: 170px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-portrait[data-commercial-art-v4] *,
+  .hero-portrait[data-commercial-art-v4] { animation-duration: .01ms !important; animation-iteration-count: 1 !important; }
+}

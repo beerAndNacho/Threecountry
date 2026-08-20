@@ -1,0 +1,67 @@
+import { HEROES, SAVE_KEY } from './content.js';
+
+const VERSION='0.8.1';
+const META_KEY='threecountry:story-director:v2';
+const TRAITS={benevolence:'인의',cunning:'지략',discipline:'군율',boldness:'결단'};
+let scheduled=false,modalOpen=false;
+
+const SCENES=[
+ {id:'war-council',screen:'hub',priority:100,speaker:'guo',eyebrow:'ACT I · 허창 군의 회의',title:'진류의 첫 깃발을 어떻게 취할 것인가',text:'진류는 비어 있지만 세 길 모두 위험하다. 첩보, 민심, 속도 가운데 무엇을 먼저 얻을지 결정해야 한다.',when:s=>!s?.battle&&!s?.chapterCleared,choices:[
+  {id:'scout',label:'곽가에게 야간 정찰을 맡긴다',hint:'금 -60 · 명성 +3 · 지략 +2',traits:{cunning:2},resources:{gold:-60,fame:3}},
+  {id:'relief',label:'창고를 열어 유민을 먼저 돕는다',hint:'군량 -100 · 명성 +10 · 인의 +2',traits:{benevolence:2},resources:{grain:-100,fame:10}},
+  {id:'mercenary',label:'현지 호걸과 용병을 고용한다',hint:'금 -120 · 군량 +60 · 결단 +2',traits:{boldness:2},resources:{gold:-120,grain:60}}]},
+ {id:'refugee-road',screen:'deployment',priority:90,speaker:'xun',eyebrow:'ACT I · 진류 서쪽 길',title:'피난 행렬이 출전로를 막아섰다',text:'수레와 아이들이 좁은 길을 가득 메웠다. 시간을 지킬지, 주민을 지킬지, 보급을 얻을지 선택해야 한다.',when:s=>!s?.battle,choices:[
+  {id:'escort',label:'전위에게 피난민 호위를 맡긴다',hint:'군량 -50 · 명성 +8 · 인의 +1 · 군율 +1',traits:{benevolence:1,discipline:1},resources:{grain:-50,fame:8}},
+  {id:'reroute',label:'숲길로 우회해 출전 시간을 지킨다',hint:'금 -30 · 지략 +1 · 결단 +1',traits:{cunning:1,boldness:1},resources:{gold:-30}},
+  {id:'requisition',label:'수레 일부를 군량 운반에 징발한다',hint:'군량 +100 · 명성 -6 · 결단 +2',traits:{boldness:2},resources:{grain:100,fame:-6}}]},
+ {id:'guan-challenge',screen:'battle',priority:80,speaker:'guan',eyebrow:'ACT II · 관우의 도전',title:'관우가 전열 앞으로 나와 승부를 청한다',text:'도전을 받아들이면 기세를 얻지만 위험하다. 방진을 유지하거나 곽가의 거짓 전령으로 시간을 벌 수도 있다.',when:s=>s?.battle?.phase==='player'&&s.battle.turn>=3&&alive(s,'guan'),choices:[
+  {id:'accept',label:'하후돈이 도전을 받아들인다',hint:'하후돈 공격 +5 · 보호막 +10',traits:{boldness:2},battle:'duel'},
+  {id:'formation',label:'방진을 유지하고 화살 사격을 명한다',hint:'아군 전원 방어 +2 · 명성 -2',traits:{discipline:2},resources:{fame:-2},battle:'defense'},
+  {id:'delay',label:'곽가가 거짓 전령으로 시간을 번다',hint:'관우 이동 봉쇄 · 책사 기술력 +1',traits:{cunning:2},battle:'delay'}]},
+ {id:'granary-fire',screen:'battle',priority:70,speaker:'cao',eyebrow:'ACT II · 동쪽 창고',title:'적의 화살이 군량창에 불을 붙였다',text:'불길을 끄면 군량을 지키지만 전열이 갈라진다. 불을 함정으로 쓰거나 지휘소로 강행할 수도 있다.',when:s=>s?.battle?.phase==='player'&&s.battle.turn>=6,choices:[
+  {id:'extinguish',label:'부대를 나눠 불을 끈다',hint:'군량 +80 · 가장 약한 아군 24 회복',traits:{discipline:1},resources:{grain:80},battle:'heal-weak'},
+  {id:'trap',label:'불길을 이용해 적 퇴로를 막는다',hint:'적 선봉 이동 봉쇄 · 지략 +2',traits:{cunning:2},battle:'root-front'},
+  {id:'press',label:'창고를 포기하고 지휘소로 돌진한다',hint:'아군 공격 +3 · 전원 HP -5',traits:{boldness:2},battle:'all-assault'}]},
+ {id:'wounded-standard',screen:'battle',priority:95,speaker:'dian',eyebrow:'OFFICER STORY · 피 묻은 깃발',title:'부상당한 장수가 깃발을 놓지 않는다',text:'후군으로 보내 치료할지, 전선에 남겨 군단의 결의를 높일지 결정해야 한다.',when:s=>s?.battle?.phase==='player'&&s.battle.units?.some(u=>u.team==='player'&&!u.dead&&u.hp/u.maxHp<=.32),choices:[
+  {id:'withdraw',label:'후군으로 보내 치료한다',hint:'부상 장수 32 회복 · 방어 +2',traits:{discipline:1},battle:'rescue-low'},
+  {id:'stand',label:'전선에 남아 결의를 선포한다',hint:'공격 +6 · 보호막 +12',traits:{boldness:2},battle:'oath-low'},
+  {id:'share',label:'전위가 호위하고 곽가가 퇴로를 연다',hint:'18 회복 · 전위 보호막 +14',traits:{cunning:1},battle:'share-low'}]},
+ {id:'after-battle-law',screen:'result',priority:100,speaker:'xun',eyebrow:'ACT III · 진류 입성',title:'새 주인의 첫 명령',text:'진류의 창고와 포로, 주민들이 조조군의 결정을 기다린다. 이 선택은 다음 장의 국가 성향을 바꾼다.',when:s=>s?.battle?.result?.outcome==='victory',choices:[
+  {id:'granary',label:'창고를 열어 주민을 구휼한다',hint:'군량 -120 · 명성 +18 · 인의 +3',traits:{benevolence:3},resources:{grain:-120,fame:18}},
+  {id:'wall',label:'성벽과 병영을 우선 정비한다',hint:'금 -100 · 군율 +3',traits:{discipline:3},resources:{gold:-100},flag:'repair-wall'},
+  {id:'artisans',label:'기술자와 책사를 초빙한다',hint:'금 -140 · 명성 +5 · 지략 +3',traits:{cunning:3},resources:{gold:-140,fame:5},flag:'recruit-artisans'}]},
+ {id:'merit-council',screen:'result',priority:70,speaker:'cao',eyebrow:'ACT III · 논공행상',title:'첫 전공을 누구의 이름으로 기록할 것인가',text:'선봉의 상징, 군단의 결속, 주민의 공로 가운데 무엇을 역사에 남길지 정한다.',when:(s,m)=>s?.battle?.result?.outcome==='victory'&&m.completed['after-battle-law'],choices:[
+  {id:'vanguard',label:'선봉 장수의 공을 크게 세운다',hint:'결단 +2 · 선봉 분기',traits:{boldness:2},flag:'vanguard-merit'},
+  {id:'shared',label:'장수와 병사의 공을 고르게 나눈다',hint:'군율 +2 · 명성 +6',traits:{discipline:2},resources:{fame:6},flag:'shared-merit'},
+  {id:'people',label:'주민이 지킨 마을까지 전공에 기록한다',hint:'인의 +2 · 명성 +10',traits:{benevolence:2},resources:{fame:10},flag:'people-merit'}]},
+ {id:'next-chapter-omen',screen:'hub',priority:30,speaker:'guo',eyebrow:'EPILOGUE · 북쪽의 봉화',title:'낙양 방면에서 세 개의 봉화가 올랐다',text:'진류를 얻은 대가로 더 큰 세력이 움직인다. 다음 장의 진입 방향을 결정해야 한다.',when:(s,m)=>s?.chapterCleared&&m.completed['after-battle-law'],choices:[
+  {id:'luoyang',label:'낙양의 정세를 먼저 살핀다',hint:'지략 +2 · 첩보 분기',traits:{cunning:2},flag:'route-luoyang'},
+  {id:'south',label:'남쪽 군량로를 확보한다',hint:'군율 +1 · 인의 +1',traits:{discipline:1,benevolence:1},flag:'route-south'},
+  {id:'pursuit',label:'퇴각한 유비군을 추적한다',hint:'결단 +2 · 추격 분기',traits:{boldness:2},flag:'route-pursuit'}]}
+];
+
+const parse=(v,f)=>{try{return v?JSON.parse(v):f}catch{return f}};
+const readSave=()=>parse(localStorage.getItem(SAVE_KEY),null);
+const writeSave=s=>{try{localStorage.setItem(SAVE_KEY,JSON.stringify(s));return true}catch{return false}};
+function readMeta(){const m=parse(localStorage.getItem(META_KEY),{});return {version:VERSION,completed:m.completed||{},flags:Array.isArray(m.flags)?m.flags:[],traits:{benevolence:0,cunning:0,discipline:0,boldness:0,...(m.traits||{})},chronicle:Array.isArray(m.chronicle)?m.chronicle:[]};}
+const writeMeta=m=>{try{localStorage.setItem(META_KEY,JSON.stringify(m))}catch{}};
+const screen=()=>document.querySelector('.result-screen')?'result':document.querySelector('.battle-screen,.battlefield-shell')?'battle':document.querySelector('.deployment-screen')?'deployment':document.querySelector('.hub-screen')?'hub':'';
+const alive=(s,id)=>!!s?.battle?.units?.some(u=>u.heroId===id&&!u.dead&&u.hp>0);
+const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const heroName=id=>HEROES[id]?.name||id;
+function sceneFor(save,meta){return SCENES.filter(x=>x.screen===screen()&&!meta.completed[x.id]&&x.when(save,meta)).sort((a,b)=>b.priority-a.priority)[0]||null;}
+function resources(save,obj={}){if(!save?.resources)return;Object.entries(obj).forEach(([k,v])=>save.resources[k]=Math.max(0,(save.resources[k]||0)+v));}
+function buff(u,key,amount,turns=2){if(!u?.status)return;u.status[key]={amount,turns};}
+function weakest(s){return s?.battle?.units?.filter(u=>u.team==='player'&&!u.dead&&u.hp>0).sort((a,b)=>a.hp/a.maxHp-b.hp/b.maxHp)[0]||null;}
+function battleEffect(s,e){const b=s?.battle;if(!b)return;const ps=b.units.filter(u=>u.team==='player'&&!u.dead&&u.hp>0),es=b.units.filter(u=>u.team==='enemy'&&!u.dead&&u.hp>0),by=id=>b.units.find(u=>u.heroId===id&&!u.dead&&u.hp>0);if(e==='duel'){const x=by('xiahou')||ps[0];if(x){buff(x,'attackUp',5);x.status.shield=(x.status.shield||0)+10;}}else if(e==='defense')ps.forEach(u=>buff(u,'defenseUp',2));else if(e==='delay'){const g=by('guan');if(g)g.status.root=Math.max(g.status.root||0,1);ps.filter(u=>HEROES[u.heroId]?.classId==='strategist').forEach(u=>u.skill=Math.min(u.skillMax,u.skill+1));}else if(e==='heal-weak'){const u=weakest(s);if(u)u.hp=Math.min(u.maxHp,u.hp+24);}else if(e==='root-front')es.sort((a,b)=>a.x-b.x).slice(0,2).forEach(u=>u.status.root=Math.max(u.status.root||0,1));else if(e==='all-assault')ps.forEach(u=>{buff(u,'attackUp',3);u.hp=Math.max(1,u.hp-5)});else if(e==='rescue-low'){const u=weakest(s);if(u){u.hp=Math.min(u.maxHp,u.hp+32);buff(u,'defenseUp',2)}}else if(e==='oath-low'){const u=weakest(s);if(u){buff(u,'attackUp',6);u.status.shield=(u.status.shield||0)+12}}else if(e==='share-low'){const u=weakest(s);if(u)u.hp=Math.min(u.maxHp,u.hp+18);const d=by('dian');if(d)d.status.shield=(d.status.shield||0)+14;}}
+function choose(scene,choice){const s=readSave(),m=readMeta();resources(s,choice.resources);if(choice.battle)battleEffect(s,choice.battle);Object.entries(choice.traits||{}).forEach(([k,v])=>m.traits[k]=Math.max(0,(m.traits[k]||0)+v));if(choice.flag&&!m.flags.includes(choice.flag))m.flags.push(choice.flag);m.completed[scene.id]=choice.id;m.chronicle.unshift({at:Date.now(),sceneId:scene.id,scene:scene.title,choiceId:choice.id,choice:choice.label,turn:s?.battle?.turn||null});m.chronicle=m.chronicle.slice(0,40);if(s?.battle?.log)s.battle.log.unshift({turn:s.battle.turn,tone:'story',text:`${scene.title} — ${choice.label}`});writeSave(s);writeMeta(m);close();setTimeout(()=>location.reload(),180);}
+function portrait(id){const h=HEROES[id];return h?`<svg class="hero-portrait story" viewBox="0 0 180 220" role="img" aria-label="${esc(h.name)}"></svg>`:'';}
+function card(sc){return `<section class="sd2-card" data-sd2-card><div class="sd2-art">${portrait(sc.speaker)}</div><div><small>${esc(sc.eyebrow)}</small><h3>${esc(sc.title)}</h3><p>${esc(sc.text)}</p><button data-sd2-open="${sc.id}">이야기 선택 열기 <b>→</b></button></div></section>`;}
+function inject(){document.querySelectorAll('[data-sd2-card]').forEach(e=>e.remove());const s=readSave(),m=readMeta(),sc=sceneFor(s,m);if(!sc||document.querySelector('.sd2-modal,.v4-event-modal'))return;let t=sc.screen==='hub'?document.querySelector('.facility-section,.commercial-growth-section,.hub-screen'):sc.screen==='deployment'?document.querySelector('.deployment-layout,.deployment-screen'):sc.screen==='battle'?document.querySelector('.battle-sidebar,.battlefield-shell'):document.querySelector('.result-grid,.result-screen');if(t)t.insertAdjacentHTML(sc.screen==='battle'?'afterbegin':'afterend',card(sc));}
+function open(id){if(modalOpen)return;const sc=SCENES.find(x=>x.id===id);if(!sc)return;modalOpen=true;const m=document.createElement('div');m.className='sd2-modal';m.dataset.sceneId=sc.id;m.innerHTML=`<div class="sd2-backdrop" data-sd2-close></div><section><header><div><small>${esc(sc.eyebrow)}</small><b>${esc(sc.title)}</b></div><button data-sd2-close>×</button></header><div class="sd2-body"><aside>${portrait(sc.speaker)}<span>${esc(heroName(sc.speaker))}</span></aside><article><p>${esc(sc.text)}</p><div class="sd2-choices">${sc.choices.map(c=>`<button data-sd2-choice="${c.id}"><b>${esc(c.label)}</b><span>${esc(c.hint)}</span></button>`).join('')}</div></article></div><footer><span>선택은 자원·전투 상태·연대기에 저장됩니다.</span><button data-sd2-close>나중에 결정</button></footer></section>`;document.body.append(m);requestAnimationFrame(()=>m.classList.add('show'));}
+function journal(){if(modalOpen)return;modalOpen=true;const meta=readMeta(),m=document.createElement('div');m.className='sd2-modal journal';const bars=Object.entries(TRAITS).map(([k,v])=>`<div><span>${v}</span><i><b style="width:${Math.min(100,(meta.traits[k]||0)*8)}%"></b></i><strong>${meta.traits[k]||0}</strong></div>`).join('');m.innerHTML=`<div class="sd2-backdrop" data-sd2-close></div><section><header><div><small>CAMPAIGN CHRONICLE</small><b>선택과 연대기</b></div><button data-sd2-close>×</button></header><div class="sd2-journal"><section><h3>세력 성향</h3><div class="sd2-traits">${bars}</div><h3>해금 분기</h3><div class="sd2-flags">${meta.flags.map(f=>`<span>${esc(f)}</span>`).join('')||'<i>아직 없습니다.</i>'}</div></section><section><h3>최근 선택</h3><ol>${meta.chronicle.map(e=>`<li><small>${e.turn?`${e.turn}턴`:'전략 장면'}</small><b>${esc(e.scene)}</b><p>${esc(e.choice)}</p></li>`).join('')||'<li><p>아직 기록이 없습니다.</p></li>'}</ol></section></div><footer><span>${Object.keys(meta.completed).length}/${SCENES.length}개 장면 기록</span><button data-sd2-close>돌아가기</button></footer></section>`;document.body.append(m);requestAnimationFrame(()=>m.classList.add('show'));}
+function close(){const m=document.querySelector('.sd2-modal');if(!m)return;m.classList.remove('show');setTimeout(()=>{m.remove();modalOpen=false},200);}
+function tools(){document.querySelectorAll('.utility-bar:not([data-sd2])').forEach(b=>{b.dataset.sd2='1';(b.lastElementChild||b).insertAdjacentHTML('afterbegin','<button class="icon-button sd2-shortcut" data-sd2-journal aria-label="선택과 연대기">記</button>');});}
+function enhance(){scheduled=false;document.documentElement.classList.add('story-director-v2-ready');tools();inject();const m=readMeta();window.__storyDirectorV2={ready:true,version:VERSION,sceneCount:SCENES.length,completed:Object.keys(m.completed).length};}
+function schedule(){if(scheduled)return;scheduled=true;requestAnimationFrame(enhance);}
+document.addEventListener('click',e=>{const t=e.target instanceof Element?e.target:null;if(!t)return;const o=t.closest('[data-sd2-open]');if(o){e.preventDefault();open(o.dataset.sd2Open);return}if(t.closest('[data-sd2-journal]')){e.preventDefault();journal();return}const c=t.closest('[data-sd2-choice]');if(c){e.preventDefault();const modal=t.closest('.sd2-modal'),sc=SCENES.find(x=>x.id===modal?.dataset.sceneId),choice=sc?.choices.find(x=>x.id===c.dataset.sd2Choice);if(sc&&choice)choose(sc,choice);return}if(t.closest('[data-sd2-close]')){e.preventDefault();close();}},true);new MutationObserver(schedule).observe(document.documentElement,{childList:true,subtree:true});schedule();

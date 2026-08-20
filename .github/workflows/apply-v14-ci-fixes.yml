@@ -1,0 +1,60 @@
+name: apply v1.4 ci fixes
+
+on:
+  push:
+    branches: [commercial-alpha]
+
+permissions:
+  contents: write
+
+jobs:
+  patch-and-verify:
+    if: ${{ !contains(github.event.head_commit.message, '[v14-ci-fix]') }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: commercial-alpha
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Correct Luoyang spawn and release assertion
+        run: |
+          node <<'NODE'
+          const fs = require('node:fs');
+          const chapterPath = 'chapter-two-content-v1.js';
+          const testPath = 'tests/chapter-two-v1.test.mjs';
+          let chapter = fs.readFileSync(chapterPath, 'utf8');
+          const badSpawn = "{heroId:'soldier-xiliang',x:8,y:6}";
+          const safeSpawn = "{heroId:'soldier-xiliang',x:7,y:6}";
+          if (chapter.includes(badSpawn)) chapter = chapter.replace(badSpawn, safeSpawn);
+          if (!chapter.includes(safeSpawn)) throw new Error('safe Burning Luoyang spawn was not applied');
+          fs.writeFileSync(chapterPath, chapter);
+
+          let test = fs.readFileSync(testPath, 'utf8');
+          const oldAssertion = "assert.match(index, /Luoyang Campaign Alpha v1\\.3\\.0/);";
+          const newAssertion = "assert.match(index, /Character & Tactics Alpha v1\\.4\\.0/);";
+          if (test.includes(oldAssertion)) test = test.replace(oldAssertion, newAssertion);
+          if (!test.includes(newAssertion)) throw new Error('v1.4 release assertion was not applied');
+          fs.writeFileSync(testPath, test);
+          NODE
+      - name: Install
+        run: npm ci
+      - name: Full build and tests
+        run: npm run build
+      - name: Deterministic campaign simulations
+        run: npm run quality
+      - name: Commit verified fixes
+        run: |
+          if git diff --quiet; then
+            echo 'Fixes already present.'
+            exit 0
+          fi
+          git config user.name 'Threecountry Quality Bot'
+          git config user.email 'actions@users.noreply.github.com'
+          git add chapter-two-content-v1.js tests/chapter-two-v1.test.mjs
+          git commit -m 'fix: validate Burning Luoyang deployment [v14-ci-fix]'
+          git push origin HEAD:commercial-alpha

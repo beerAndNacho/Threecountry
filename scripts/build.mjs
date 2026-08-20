@@ -5,11 +5,20 @@ const dist = new URL('../dist/', import.meta.url);
 await rm(dist, { recursive: true, force: true });
 await mkdir(dist, { recursive: true });
 for (const file of [
-  'index.html', 'styles.css', 'gameplay-v4.css', 'character-art-v1.css', 'pixel-geometry-fix.css', 'commercial-v1.css', 'mobile-command-v1.css',
-  'content.js', 'engine.js', 'audio.js', 'app.js', 'gameplay-v4.js', 'character-art-v1.js', 'commercial-data.js', 'forecast-action.js', 'commercial-v1.js', 'mobile-command-v1.js',
+  'index.html', 'styles.css', 'gameplay-v4.css', 'commercial-v1.css', 'mobile-command-v1.css',
+  'character-art-v2.css', 'chapter-two-art-v1.css', 'story-director-v2.css', 'commercial-combat-v3.css', 'campaign-story-v3.css',
+  'operation-campaign-v1.css', 'operation-maps-v1.css', 'chapter-two-v1.css', 'save-slots-v1.css', 'tutorial-v1.css',
+  'commercial-character-v4.css', 'tactical-intel-v1.css',
+  'content.js', 'engine.js', 'audio.js', 'app.js', 'gameplay-v4.js',
+  'commercial-data.js', 'forecast-action.js', 'commercial-v1.js', 'mobile-command-v1.js',
+  'character-art-v2.js', 'chapter-two-art-v1.js', 'story-director-v2.js', 'commercial-combat-v3.js', 'campaign-story-v3.js',
+  'chapter-two-content-v1.js', 'chapter-two-campaign-v1.js',
+  'operation-campaign-v1.js', 'operation-map-data.js', 'operation-maps-v1.js',
+  'save-slots-core.js', 'save-slots-v1.js', 'tutorial-v1.js',
+  'commercial-character-v4.js', 'tactical-intel-v1.js',
 ]) {
   await cp(new URL(file, source), new URL(file, dist));
 }
 await cp(new URL('assets/', source), new URL('assets/', dist), { recursive: true });
 await writeFile(new URL('.nojekyll', dist), '');
-console.log('SRPG v0.7.1 commercial growth, forecast and mobile command build created in dist');
+console.log('Threecountry character and tactics alpha v1.4.0 build created in dist');

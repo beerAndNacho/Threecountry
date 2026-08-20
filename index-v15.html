@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <title>천하일지 SRPG · Battlefield Miniature Alpha v1.5.0</title>
+  <style>
+    html,body{margin:0;min-height:100%;background:#071012;color:#e8eee9;font-family:system-ui,-apple-system,BlinkMacSystemFont,"Noto Sans KR",sans-serif}
+    .v15-loading{min-height:100vh;display:grid;place-items:center;text-align:center;padding:24px;box-sizing:border-box;background:radial-gradient(circle at 50% 35%,#26332e,#071012 65%)}
+    .v15-loading b{display:block;color:#ecd79b;font-size:20px;margin-bottom:7px}.v15-loading span{color:#91a39e;font-size:12px}
+  </style>
+</head>
+<body>
+  <div class="v15-loading"><div><b>천하일지</b><span>전장 미니어처를 준비하고 있습니다…</span></div></div>
+  <script type="module">
+    const source = await fetch('./index.html', { cache: 'no-store' }).then((response) => {
+      if (!response.ok) throw new Error(`base page ${response.status}`);
+      return response.text();
+    });
+    const versioned = source
+      .replace(/<title>[\s\S]*?<\/title>/i, '<title>천하일지 SRPG · Battlefield Miniature Alpha v1.5.0</title>')
+      .replace('</head>', '  <link rel="stylesheet" href="./battle-miniature-v1.css?v=1.0.0" />\n  <link rel="stylesheet" href="./combat-forecast-v1.css?v=1.0.0" />\n</head>')
+      .replace('</body>', '  <script type="module" src="./battle-miniature-v1.js?v=1.0.0"><\/script>\n  <script type="module" src="./combat-forecast-v1.js?v=1.0.0"><\/script>\n</body>');
+    document.open();
+    document.write(versioned);
+    document.close();
+  </script>
+</body>
+</html>
